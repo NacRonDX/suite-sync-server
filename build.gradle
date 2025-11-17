@@ -2,7 +2,11 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.7'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.openapi.generator' version '7.2.0'
+	id 'com.diffplug.spotless' version '6.25.0'
 }
+
+apply plugin: 'checkstyle'
 
 group = 'com.nacrondx'
 version = '0.0.1-SNAPSHOT'
@@ -27,16 +31,132 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.liquibase:liquibase-core'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+
 	compileOnly 'org.projectlombok:lombok'
+
 	runtimeOnly 'org.postgresql:postgresql'
+
 	annotationProcessor 'org.projectlombok:lombok'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:postgresql'
+
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+checkstyle {
+    toolVersion = '12.1.2'
+    configFile = file("$rootDir/checkstyle.xml")
+    showViolations = true
+    ignoreFailures = false
+}
+
+tasks.withType(Checkstyle).configureEach {
+	configProperties = [
+			'org.checkstyle.google.suppressionfilter.config': file("$rootDir/checkstyle-suppressions.xml").absolutePath
+	]
+}
+
+checkstyleMain {
+    source = fileTree('src/main/java')
+}
+
+checkstyleTest {
+    source = fileTree('src/test/java')
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+openApiGenerate {
+	generatorName = 'spring'
+	inputSpec = "$rootDir/src/main/resources/openapi/user-api.yaml".toString()
+	outputDir = "${layout.buildDirectory.get().asFile}/generated/user".toString()
+	apiPackage = 'com.nacrondx.suitesync.api'
+	modelPackage = 'com.nacrondx.suitesync.model.user'
+	configOptions = [
+			dateLibrary: "java8",
+			interfaceOnly: "true",
+			useSpringBoot3: "true",
+			useTags: "true"
+	]
+}
+
+tasks.register('openApiGenerateAuth', org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+	generatorName = 'spring'
+	inputSpec = "$rootDir/src/main/resources/openapi/auth-api.yaml".toString()
+	outputDir = "${layout.buildDirectory.get().asFile}/generated/auth".toString()
+	apiPackage = 'com.nacrondx.suitesync.api'
+	modelPackage = 'com.nacrondx.suitesync.model.auth'
+	configOptions = [
+			dateLibrary: "java8",
+			interfaceOnly: "true",
+			useSpringBoot3: "true",
+			useTags: "true",
+			apiUtil: "false"
+	]
+}
+
+sourceSets.main.java.srcDirs += "${layout.buildDirectory.get().asFile}/generated/user/src/main/java"
+sourceSets.main.java.srcDirs += "${layout.buildDirectory.get().asFile}/generated/auth/src/main/java"
+
+compileJava.dependsOn tasks.openApiGenerate, tasks.openApiGenerateAuth
+
+tasks.register('bootRunWithTestcontainers') {
+	group = 'application'
+	description = 'Runs the application with Testcontainers for local development'
+
+	dependsOn 'testClasses'
+
+	doLast {
+		javaexec {
+			classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+			mainClass = 'com.nacrondx.suitesync.TestSuiteSyncApplication'
+			systemProperty 'spring.profiles.active', 'test'
+			systemProperty 'testcontainers.reuse.enable', 'true'
+		}
+	}
+}
+
+tasks.named('check') {
+    dependsOn 'checkstyleMain', 'checkstyleTest'
+}
+
+tasks.register('removeDuplicateApiUtil') {
+    doLast {
+        delete file("${layout.buildDirectory.get().asFile}/generated/auth/src/main/java/com/nacrondx/suitesync/api/ApiUtil.java")
+    }
+}
+
+tasks.openApiGenerateAuth.configure {
+    finalizedBy(tasks.removeDuplicateApiUtil)
+}
+
+spotless {
+    java {
+        target 'src/main/java/**/*.java', 'src/test/java/**/*.java'
+        targetExclude 'build/generated/**/*.java'
+        googleJavaFormat('1.32.0')
+        removeUnusedImports()
+        importOrder()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+tasks.named('checkstyleMain') {
+    dependsOn 'spotlessApply'
+}
+tasks.named('checkstyleTest') {
+    dependsOn 'spotlessApply'
 }

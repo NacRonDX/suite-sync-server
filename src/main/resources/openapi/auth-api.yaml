@@ -1,0 +1,413 @@
+openapi: 3.0.3
+info:
+  title: Suite Sync Authentication API
+  description: API for user authentication and token management in the hotel management system
+  version: 1.0.0
+  contact:
+    name: Suite Sync Team
+    email: support@suitesync.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization operations
+
+paths:
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate a user and receive a JWT token
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh JWT token
+      description: Get a new JWT token using a valid refresh token
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Invalidate the current JWT token
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/validate:
+    post:
+      tags:
+        - Authentication
+      summary: Validate JWT token
+      description: Check if the provided JWT token is valid
+      operationId: validateToken
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenValidationResponse'
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/change-password:
+    post:
+      tags:
+        - Authentication
+      summary: Change password
+      description: Change the password for the authenticated user
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid input or current password incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset
+      description: Request a password reset link to be sent to the user's email
+      operationId: forgotPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid email format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      description: Reset password using a valid reset token
+      operationId: resetPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid or expired reset token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: john.doe@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: User's password
+          example: SecurePassword123!
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+        refreshToken:
+          type: string
+          description: Refresh token for obtaining new access tokens
+        tokenType:
+          type: string
+          description: Type of the token
+          example: Bearer
+          default: Bearer
+        expiresIn:
+          type: integer
+          format: int64
+          description: Token expiration time in seconds
+          example: 86400
+        userId:
+          type: integer
+          format: int64
+          description: ID of the authenticated user
+          example: 1
+        userType:
+          type: string
+          enum:
+            - CUSTOMER
+            - STAFF
+            - ADMIN
+          description: Type of the authenticated user
+          example: CUSTOMER
+        email:
+          type: string
+          format: email
+          description: Email of the authenticated user
+          example: john.doe@example.com
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: The refresh token to use for obtaining a new access token
+
+    TokenValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: Whether the token is valid
+          example: true
+        userId:
+          type: integer
+          format: int64
+          description: ID of the user associated with the token
+          example: 1
+        userType:
+          type: string
+          enum:
+            - CUSTOMER
+            - STAFF
+            - ADMIN
+          description: Type of the user
+          example: CUSTOMER
+        email:
+          type: string
+          format: email
+          description: Email of the user
+          example: john.doe@example.com
+        expiresAt:
+          type: string
+          format: date-time
+          description: Token expiration timestamp
+          example: 2023-01-16T10:30:00Z
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          format: password
+          minLength: 8
+          description: User's current password
+          example: OldPassword123!
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          description: User's new password (must be at least 8 characters)
+          example: NewSecurePassword123!
+        confirmPassword:
+          type: string
+          format: password
+          minLength: 8
+          description: Confirmation of the new password (must match newPassword)
+          example: NewSecurePassword123!
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address of the user requesting password reset
+          example: john.doe@example.com
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+          description: Password reset token received via email
+          example: reset_token_abc123xyz
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          description: New password for the account
+          example: NewSecurePassword123!
+        confirmPassword:
+          type: string
+          format: password
+          minLength: 8
+          description: Confirmation of the new password
+          example: NewSecurePassword123!
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the operation was successful
+          example: true
+        message:
+          type: string
+          description: Success message
+          example: Operation completed successfully
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the error
+          example: 2023-01-15T10:30:00Z
+        status:
+          type: integer
+          description: HTTP status code
+          example: 401
+        error:
+          type: string
+          description: Error type
+          example: Unauthorized
+        message:
+          type: string
+          description: Error message
+          example: Invalid credentials
+        path:
+          type: string
+          description: Request path
+          example: /api/v1/auth/login
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

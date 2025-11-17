@@ -1,0 +1,57 @@
+package com.nacrondx.suitesync.controller;
+
+import com.nacrondx.suitesync.api.UsersApi;
+import com.nacrondx.suitesync.model.user.CreateUserRequest;
+import com.nacrondx.suitesync.model.user.UpdateUserRequest;
+import com.nacrondx.suitesync.model.user.UserPageResponse;
+import com.nacrondx.suitesync.model.user.UserResponse;
+import com.nacrondx.suitesync.model.user.UserType;
+import com.nacrondx.suitesync.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+public class UserController implements UsersApi {
+  private final UserService userService;
+
+  @Override
+  public ResponseEntity<UserResponse> createUser(CreateUserRequest createUserRequest) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(userService.createUser(createUserRequest));
+  }
+
+  @Override
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<UserResponse> activateUser(Long userId) {
+    return UsersApi.super.activateUser(userId);
+  }
+
+  @Override
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<UserResponse> getUserById(Long userId) {
+    return UsersApi.super.getUserById(userId);
+  }
+
+  @Override
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<UserResponse> updateUser(Long userId, UpdateUserRequest updateUserRequest) {
+    return UsersApi.super.updateUser(userId, updateUserRequest);
+  }
+
+  @Override
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<Void> deleteUser(Long userId) {
+    return UsersApi.super.deleteUser(userId);
+  }
+
+  @Override
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<UserPageResponse> getAllUsers(
+      UserType userType, Integer page, Integer size) {
+    return UsersApi.super.getAllUsers(userType, page, size);
+  }
+}

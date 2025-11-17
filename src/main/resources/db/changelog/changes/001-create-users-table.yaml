@@ -1,0 +1,99 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-users-table
+      author: suite-sync
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: first_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone_number
+                  type: VARCHAR(20)
+              - column:
+                  name: password_hash
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: ACTIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: street
+                  type: VARCHAR(255)
+              - column:
+                  name: city
+                  type: VARCHAR(100)
+              - column:
+                  name: state
+                  type: VARCHAR(100)
+              - column:
+                  name: postal_code
+                  type: VARCHAR(20)
+              - column:
+                  name: country
+                  type: VARCHAR(100)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_users_email
+            tableName: users
+            columns:
+              - column:
+                  name: email
+        - createIndex:
+            indexName: idx_users_user_type
+            tableName: users
+            columns:
+              - column:
+                  name: user_type
+
+  - changeSet:
+      id: 001-add-users-table-constraints
+      author: suite-sync
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE users ADD CONSTRAINT chk_user_type CHECK (user_type IN ('CUSTOMER', 'STAFF', 'ADMIN'));
+              ALTER TABLE users ADD CONSTRAINT chk_status CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED'));
+
