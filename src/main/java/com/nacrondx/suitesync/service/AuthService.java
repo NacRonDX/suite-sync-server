@@ -125,7 +125,6 @@ public class AuthService {
       var accessToken = jwtService.generateToken(user);
       var newRefreshToken = jwtService.generateRefreshToken(user);
 
-      // Build response
       var response = new LoginResponse();
       response.setToken(accessToken);
       response.setRefreshToken(newRefreshToken);

@@ -33,25 +33,26 @@ public class UserController implements UsersApi {
   @Override
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<UserResponse> getUserById(Long userId) {
-    return UsersApi.super.getUserById(userId);
+    return ResponseEntity.ok(userService.getUserById(userId));
   }
 
   @Override
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<UserResponse> updateUser(Long userId, UpdateUserRequest updateUserRequest) {
-    return UsersApi.super.updateUser(userId, updateUserRequest);
+    return ResponseEntity.ok(userService.updateUser(userId, updateUserRequest));
   }
 
   @Override
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> deleteUser(Long userId) {
-    return UsersApi.super.deleteUser(userId);
+    userService.deleteUser(userId);
+    return ResponseEntity.noContent().build();
   }
 
   @Override
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<UserPageResponse> getAllUsers(
       UserType userType, Integer page, Integer size) {
-    return UsersApi.super.getAllUsers(userType, page, size);
+    return ResponseEntity.ok(userService.getAllUsers(userType, page, size));
   }
 }

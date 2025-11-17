@@ -162,4 +162,238 @@ class UserServiceTest {
     assertEquals(2L, response.getId());
     assertEquals("jane.doe@example.com", response.getEmail());
   }
+
+  @Test
+  void getUserByIdShouldReturnUserResponse() {
+    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(savedUser));
+
+    var response = userService.getUserById(1L);
+
+    assertNotNull(response);
+    assertEquals(1L, response.getId());
+    assertEquals("john.doe@example.com", response.getEmail());
+    assertEquals("John", response.getFirstName());
+    assertEquals("Doe", response.getLastName());
+    verify(userRepository).findById(1L);
+  }
+
+  @Test
+  void getUserByIdWithNonExistentIdShouldThrowException() {
+    when(userRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+
+    var exception =
+        assertThrows(
+            com.nacrondx.suitesync.exception.ResourceNotFoundException.class,
+            () -> userService.getUserById(999L));
+
+    assertEquals("User not found with id: 999", exception.getMessage());
+    verify(userRepository).findById(999L);
+  }
+
+  @Test
+  void updateUserShouldUpdateAllFields() {
+    var updateRequest = new com.nacrondx.suitesync.model.user.UpdateUserRequest();
+    updateRequest.setFirstName("Jane");
+    updateRequest.setLastName("Smith");
+    updateRequest.setPhoneNumber("+9876543210");
+    updateRequest.setUserType(UserType.STAFF);
+
+    var address = new Address();
+    address.setStreet("456 Oak Avenue");
+    address.setCity("Boston");
+    address.setState("MA");
+    address.setPostalCode("02101");
+    address.setCountry("USA");
+    updateRequest.setAddress(address);
+
+    var updatedUser =
+        User.builder()
+            .id(1L)
+            .email("john.doe@example.com")
+            .firstName("Jane")
+            .lastName("Smith")
+            .phoneNumber("+9876543210")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.STAFF)
+            .status(User.UserStatus.INACTIVE)
+            .street("456 Oak Avenue")
+            .city("Boston")
+            .state("MA")
+            .postalCode("02101")
+            .country("USA")
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(savedUser));
+    when(userRepository.save(any(User.class))).thenReturn(updatedUser);
+
+    var response = userService.updateUser(1L, updateRequest);
+
+    assertNotNull(response);
+    assertEquals(1L, response.getId());
+    assertEquals("Jane", response.getFirstName());
+    assertEquals("Smith", response.getLastName());
+    assertEquals("+9876543210", response.getPhoneNumber());
+    assertEquals(UserType.STAFF, response.getUserType());
+    assertEquals("456 Oak Avenue", response.getAddress().getStreet());
+    assertEquals("Boston", response.getAddress().getCity());
+    verify(userRepository).findById(1L);
+    verify(userRepository).save(any(User.class));
+  }
+
+  @Test
+  void updateUserWithPartialDataShouldOnlyUpdateProvidedFields() {
+    var updateRequest = new com.nacrondx.suitesync.model.user.UpdateUserRequest();
+    updateRequest.setFirstName("Jane");
+
+    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(savedUser));
+    when(userRepository.save(any(User.class))).thenReturn(savedUser);
+
+    userService.updateUser(1L, updateRequest);
+
+    var userCaptor = ArgumentCaptor.forClass(User.class);
+    verify(userRepository).save(userCaptor.capture());
+
+    var capturedUser = userCaptor.getValue();
+    assertEquals("Jane", capturedUser.getFirstName());
+    assertEquals("Doe", capturedUser.getLastName()); // Should remain unchanged
+  }
+
+  @Test
+  void updateUserWithNonExistentIdShouldThrowException() {
+    var updateRequest = new com.nacrondx.suitesync.model.user.UpdateUserRequest();
+    updateRequest.setFirstName("Jane");
+
+    when(userRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+
+    var exception =
+        assertThrows(
+            com.nacrondx.suitesync.exception.ResourceNotFoundException.class,
+            () -> userService.updateUser(999L, updateRequest));
+
+    assertEquals("User not found with id: 999", exception.getMessage());
+    verify(userRepository).findById(999L);
+  }
+
+  @Test
+  void deleteUserShouldDeleteExistingUser() {
+    when(userRepository.existsById(1L)).thenReturn(true);
+
+    userService.deleteUser(1L);
+
+    verify(userRepository).existsById(1L);
+    verify(userRepository).deleteById(1L);
+  }
+
+  @Test
+  void deleteUserWithNonExistentIdShouldThrowException() {
+    when(userRepository.existsById(999L)).thenReturn(false);
+
+    var exception =
+        assertThrows(
+            com.nacrondx.suitesync.exception.ResourceNotFoundException.class,
+            () -> userService.deleteUser(999L));
+
+    assertEquals("User not found with id: 999", exception.getMessage());
+    verify(userRepository).existsById(999L);
+  }
+
+  @Test
+  void getAllUsersShouldReturnPagedResults() {
+    var user2 =
+        User.builder()
+            .id(2L)
+            .email("jane.doe@example.com")
+            .firstName("Jane")
+            .lastName("Doe")
+            .phoneNumber("+9876543210")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.STAFF)
+            .status(User.UserStatus.ACTIVE)
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+    var users = java.util.List.of(savedUser, user2);
+    var page =
+        new org.springframework.data.domain.PageImpl<>(
+            users, org.springframework.data.domain.PageRequest.of(0, 20), 2);
+
+    when(userRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(page);
+
+    var response = userService.getAllUsers(null, 0, 20);
+
+    assertNotNull(response);
+    assertEquals(2, response.getContent().size());
+    assertEquals(0, response.getPage());
+    assertEquals(20, response.getSize());
+    assertEquals(2L, response.getTotalElements());
+    assertEquals(1, response.getTotalPages());
+    verify(userRepository).findAll(any(org.springframework.data.domain.Pageable.class));
+  }
+
+  @Test
+  void getAllUsersWithDefaultParametersShouldUseDefaults() {
+    var page =
+        new org.springframework.data.domain.PageImpl<>(
+            java.util.List.of(savedUser), org.springframework.data.domain.PageRequest.of(0, 20), 1);
+
+    when(userRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(page);
+
+    var response = userService.getAllUsers(null, null, null);
+
+    assertNotNull(response);
+    assertEquals(0, response.getPage());
+    assertEquals(20, response.getSize());
+    verify(userRepository).findAll(any(org.springframework.data.domain.Pageable.class));
+  }
+
+  @Test
+  void getAllUsersFilteredByUserTypeShouldReturnFilteredResults() {
+    var customerUser =
+        User.builder()
+            .id(1L)
+            .email("customer@example.com")
+            .firstName("Customer")
+            .lastName("User")
+            .phoneNumber("+1234567890")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.ACTIVE)
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+    var staffUser =
+        User.builder()
+            .id(2L)
+            .email("staff@example.com")
+            .firstName("Staff")
+            .lastName("User")
+            .phoneNumber("+9876543210")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.STAFF)
+            .status(User.UserStatus.ACTIVE)
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+    var users = java.util.List.of(customerUser, staffUser);
+    var page =
+        new org.springframework.data.domain.PageImpl<>(
+            users, org.springframework.data.domain.PageRequest.of(0, 20), 2);
+
+    when(userRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+        .thenReturn(page);
+
+    var response = userService.getAllUsers(UserType.CUSTOMER, 0, 20);
+
+    assertNotNull(response);
+    assertEquals(1, response.getContent().size());
+    assertEquals(UserType.CUSTOMER, response.getContent().get(0).getUserType());
+    verify(userRepository).findAll(any(org.springframework.data.domain.Pageable.class));
+  }
 }
