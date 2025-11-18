@@ -467,8 +467,8 @@ class UserServiceTest {
 
     var capturedUser = userCaptor.getValue();
     assertEquals(User.UserStatus.ACTIVE, capturedUser.getStatus());
-      assertNull(capturedUser.getConfirmationToken());
-      assertNull(capturedUser.getConfirmationTokenExpiry());
+    assertNull(capturedUser.getConfirmationToken());
+    assertNull(capturedUser.getConfirmationTokenExpiry());
   }
 
   @Test
