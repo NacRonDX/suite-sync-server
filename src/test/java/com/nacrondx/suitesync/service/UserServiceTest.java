@@ -2,6 +2,7 @@ package com.nacrondx.suitesync.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -28,6 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 class UserServiceTest {
   @Mock private UserRepository userRepository;
   @Mock private PasswordEncoder passwordEncoder;
+  @Mock private EmailService emailService;
 
   @InjectMocks private UserService userService;
 
@@ -257,7 +259,7 @@ class UserServiceTest {
 
     var capturedUser = userCaptor.getValue();
     assertEquals("Jane", capturedUser.getFirstName());
-    assertEquals("Doe", capturedUser.getLastName()); // Should remain unchanged
+    assertEquals("Doe", capturedUser.getLastName());
   }
 
   @Test
@@ -395,5 +397,174 @@ class UserServiceTest {
     assertEquals(1, response.getContent().size());
     assertEquals(UserType.CUSTOMER, response.getContent().get(0).getUserType());
     verify(userRepository).findAll(any(org.springframework.data.domain.Pageable.class));
+  }
+
+  @Test
+  void createUserShouldSendConfirmationEmail() {
+    when(userRepository.existsByEmail(anyString())).thenReturn(false);
+    when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$hashedpassword");
+    when(userRepository.save(any(User.class))).thenReturn(savedUser);
+
+    userService.createUser(createUserRequest);
+
+    var userCaptor = ArgumentCaptor.forClass(User.class);
+    verify(userRepository).save(userCaptor.capture());
+
+    var capturedUser = userCaptor.getValue();
+    assertNotNull(capturedUser.getConfirmationToken());
+    assertNotNull(capturedUser.getConfirmationTokenExpiry());
+    assertEquals(User.UserStatus.INACTIVE, capturedUser.getStatus());
+
+    verify(emailService)
+        .sendConfirmationEmail(anyString(), anyString(), any(Long.class), anyString());
+  }
+
+  @Test
+  void activateUserWithValidTokenShouldActivateUser() {
+    var inactiveUser =
+        User.builder()
+            .id(1L)
+            .email("john.doe@example.com")
+            .firstName("John")
+            .lastName("Doe")
+            .phoneNumber("+1234567890")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.INACTIVE)
+            .confirmationToken("valid-token-123")
+            .confirmationTokenExpiry(LocalDateTime.now().plusHours(24))
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+    var activatedUser =
+        User.builder()
+            .id(1L)
+            .email("john.doe@example.com")
+            .firstName("John")
+            .lastName("Doe")
+            .phoneNumber("+1234567890")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.ACTIVE)
+            .confirmationToken(null)
+            .confirmationTokenExpiry(null)
+            .createdAt(inactiveUser.getCreatedAt())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(inactiveUser));
+    when(userRepository.save(any(User.class))).thenReturn(activatedUser);
+
+    var response = userService.activateUser(1L, "valid-token-123");
+
+    assertNotNull(response);
+    assertEquals(1L, response.getId());
+    assertEquals(UserStatus.ACTIVE, response.getStatus());
+
+    var userCaptor = ArgumentCaptor.forClass(User.class);
+    verify(userRepository).save(userCaptor.capture());
+
+    var capturedUser = userCaptor.getValue();
+    assertEquals(User.UserStatus.ACTIVE, capturedUser.getStatus());
+      assertNull(capturedUser.getConfirmationToken());
+      assertNull(capturedUser.getConfirmationTokenExpiry());
+  }
+
+  @Test
+  void activateUserWithExpiredTokenShouldThrowException() {
+    var inactiveUser =
+        User.builder()
+            .id(1L)
+            .email("john.doe@example.com")
+            .firstName("John")
+            .lastName("Doe")
+            .phoneNumber("+1234567890")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.INACTIVE)
+            .confirmationToken("expired-token-123")
+            .confirmationTokenExpiry(LocalDateTime.now().minusHours(1))
+            .createdAt(LocalDateTime.now().minusDays(1))
+            .updatedAt(LocalDateTime.now().minusDays(1))
+            .build();
+
+    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(inactiveUser));
+
+    var exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> userService.activateUser(1L, "expired-token-123"));
+
+    assertEquals("Confirmation token has expired", exception.getMessage());
+    verify(userRepository).findById(1L);
+  }
+
+  @Test
+  void activateUserWithInvalidTokenShouldThrowException() {
+    var inactiveUser =
+        User.builder()
+            .id(1L)
+            .email("john.doe@example.com")
+            .firstName("John")
+            .lastName("Doe")
+            .phoneNumber("+1234567890")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.INACTIVE)
+            .confirmationToken("valid-token-123")
+            .confirmationTokenExpiry(LocalDateTime.now().plusHours(24))
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(inactiveUser));
+
+    var exception =
+        assertThrows(
+            IllegalArgumentException.class, () -> userService.activateUser(1L, "wrong-token"));
+
+    assertEquals("Invalid confirmation token", exception.getMessage());
+    verify(userRepository).findById(1L);
+  }
+
+  @Test
+  void activateUserWhenAlreadyActiveShouldThrowException() {
+    var activeUser =
+        User.builder()
+            .id(1L)
+            .email("john.doe@example.com")
+            .firstName("John")
+            .lastName("Doe")
+            .phoneNumber("+1234567890")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.ACTIVE)
+            .confirmationToken(null)
+            .confirmationTokenExpiry(null)
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(activeUser));
+
+    var exception =
+        assertThrows(IllegalStateException.class, () -> userService.activateUser(1L, "any-token"));
+
+    assertEquals("User account is already active", exception.getMessage());
+    verify(userRepository).findById(1L);
+  }
+
+  @Test
+  void activateUserWithNonExistentUserShouldThrowException() {
+    when(userRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+
+    var exception =
+        assertThrows(
+            com.nacrondx.suitesync.exception.ResourceNotFoundException.class,
+            () -> userService.activateUser(999L, "any-token"));
+
+    assertEquals("User not found with id: 999", exception.getMessage());
+    verify(userRepository).findById(999L);
   }
 }

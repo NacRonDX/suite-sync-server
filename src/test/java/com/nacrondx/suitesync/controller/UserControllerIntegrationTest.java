@@ -16,12 +16,14 @@ import com.nacrondx.suitesync.model.user.CreateUserRequest;
 import com.nacrondx.suitesync.model.user.UpdateUserRequest;
 import com.nacrondx.suitesync.model.user.UserType;
 import com.nacrondx.suitesync.repository.UserRepository;
+import com.nacrondx.suitesync.service.EmailService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -34,6 +36,7 @@ class UserControllerIntegrationTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private UserRepository userRepository;
+  @MockBean private EmailService emailService;
 
   private User testUser;
 
@@ -105,7 +108,7 @@ class UserControllerIntegrationTest {
   @Test
   void createUserWithDuplicateEmailShouldReturnConflict() throws Exception {
     var createRequest = new CreateUserRequest();
-    createRequest.setEmail("test@example.com"); // Duplicate email
+    createRequest.setEmail("test@example.com");
     createRequest.setFirstName("Duplicate");
     createRequest.setLastName("User");
     createRequest.setPhoneNumber("+1111111111");
@@ -176,7 +179,7 @@ class UserControllerIntegrationTest {
                 .content(objectMapper.writeValueAsString(updateRequest)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id", is(testUser.getId().intValue())))
-        .andExpect(jsonPath("$.email", is("test@example.com"))) // Email should not change
+        .andExpect(jsonPath("$.email", is("test@example.com")))
         .andExpect(jsonPath("$.firstName", is("Updated")))
         .andExpect(jsonPath("$.lastName", is("Name")))
         .andExpect(jsonPath("$.phoneNumber", is("+9999999999")))
@@ -198,8 +201,8 @@ class UserControllerIntegrationTest {
                 .content(objectMapper.writeValueAsString(updateRequest)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.firstName", is("OnlyFirstName")))
-        .andExpect(jsonPath("$.lastName", is("User"))) // Should remain unchanged
-        .andExpect(jsonPath("$.phoneNumber", is("+1234567890"))); // Should remain unchanged
+        .andExpect(jsonPath("$.lastName", is("User")))
+        .andExpect(jsonPath("$.phoneNumber", is("+1234567890")));
   }
 
   @Test
@@ -314,7 +317,7 @@ class UserControllerIntegrationTest {
         .andExpect(jsonPath("$.content", hasSize(10)))
         .andExpect(jsonPath("$.page", is(0)))
         .andExpect(jsonPath("$.size", is(10)))
-        .andExpect(jsonPath("$.totalElements", is(26))) // 25 + 1 from setUp
+        .andExpect(jsonPath("$.totalElements", is(26)))
         .andExpect(jsonPath("$.totalPages", is(3)));
 
     mockMvc
@@ -369,5 +372,120 @@ class UserControllerIntegrationTest {
   @Test
   void getAllUsersWithoutAuthShouldReturnUnauthorized() throws Exception {
     mockMvc.perform(get("/api/v1/users")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void activateUserWithValidTokenShouldActivateAccount() throws Exception {
+    var inactiveUser =
+        User.builder()
+            .email("inactive@example.com")
+            .firstName("Inactive")
+            .lastName("User")
+            .phoneNumber("+5555555555")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.INACTIVE)
+            .confirmationToken("valid-token-123")
+            .confirmationTokenExpiry(java.time.LocalDateTime.now().plusHours(24))
+            .build();
+
+    inactiveUser = userRepository.save(inactiveUser);
+
+    mockMvc
+        .perform(post("/api/v1/users/" + inactiveUser.getId() + "/activate?token=valid-token-123"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id", is(inactiveUser.getId().intValue())))
+        .andExpect(jsonPath("$.email", is("inactive@example.com")))
+        .andExpect(jsonPath("$.status", is("ACTIVE")));
+
+    var activatedUser = userRepository.findById(inactiveUser.getId()).orElseThrow();
+    assert activatedUser.getStatus() == User.UserStatus.ACTIVE;
+    assert activatedUser.getConfirmationToken() == null;
+    assert activatedUser.getConfirmationTokenExpiry() == null;
+  }
+
+  @Test
+  void activateUserWithInvalidTokenShouldReturnBadRequest() throws Exception {
+    var inactiveUser =
+        User.builder()
+            .email("inactive2@example.com")
+            .firstName("Inactive")
+            .lastName("User")
+            .phoneNumber("+5555555556")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.INACTIVE)
+            .confirmationToken("valid-token-456")
+            .confirmationTokenExpiry(java.time.LocalDateTime.now().plusHours(24))
+            .build();
+
+    inactiveUser = userRepository.save(inactiveUser);
+
+    mockMvc
+        .perform(post("/api/v1/users/" + inactiveUser.getId() + "/activate?token=wrong-token"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").exists());
+  }
+
+  @Test
+  void activateUserWithExpiredTokenShouldReturnBadRequest() throws Exception {
+    var inactiveUser =
+        User.builder()
+            .email("inactive3@example.com")
+            .firstName("Inactive")
+            .lastName("User")
+            .phoneNumber("+5555555557")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.INACTIVE)
+            .confirmationToken("expired-token-789")
+            .confirmationTokenExpiry(java.time.LocalDateTime.now().minusHours(1))
+            .build();
+
+    inactiveUser = userRepository.save(inactiveUser);
+
+    mockMvc
+        .perform(
+            post("/api/v1/users/" + inactiveUser.getId() + "/activate?token=expired-token-789"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").exists());
+  }
+
+  @Test
+  void activateAlreadyActiveUserShouldReturnBadRequest() throws Exception {
+    mockMvc
+        .perform(post("/api/v1/users/" + testUser.getId() + "/activate?token=any-token"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").exists());
+  }
+
+  @Test
+  void activateUserWithNonExistentIdShouldReturnNotFound() throws Exception {
+    mockMvc
+        .perform(post("/api/v1/users/999999/activate?token=any-token"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").exists());
+  }
+
+  @Test
+  void activateUserEndpointShouldNotRequireAuthentication() throws Exception {
+    var inactiveUser =
+        User.builder()
+            .email("noauth@example.com")
+            .firstName("NoAuth")
+            .lastName("User")
+            .phoneNumber("+5555555558")
+            .passwordHash("$2a$10$hashedpassword")
+            .userType(User.UserType.CUSTOMER)
+            .status(User.UserStatus.INACTIVE)
+            .confirmationToken("public-token-123")
+            .confirmationTokenExpiry(java.time.LocalDateTime.now().plusHours(24))
+            .build();
+
+    inactiveUser = userRepository.save(inactiveUser);
+
+    mockMvc
+        .perform(post("/api/v1/users/" + inactiveUser.getId() + "/activate?token=public-token-123"))
+        .andExpect(status().isOk());
   }
 }

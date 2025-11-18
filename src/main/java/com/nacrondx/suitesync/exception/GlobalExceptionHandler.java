@@ -28,12 +28,34 @@ public class GlobalExceptionHandler {
       IllegalArgumentException ex, WebRequest request) {
     var errorResponse = new ErrorResponse();
     errorResponse.setTimestamp(OffsetDateTime.now());
-    errorResponse.setStatus(HttpStatus.CONFLICT.value());
-    errorResponse.setError(HttpStatus.CONFLICT.getReasonPhrase());
+
+    if (ex.getMessage() != null && ex.getMessage().contains("already exists")) {
+      errorResponse.setStatus(HttpStatus.CONFLICT.value());
+      errorResponse.setError(HttpStatus.CONFLICT.getReasonPhrase());
+      errorResponse.setMessage(ex.getMessage());
+      errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+      return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+    errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
     errorResponse.setMessage(ex.getMessage());
     errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
 
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalStateException(
+      IllegalStateException ex, WebRequest request) {
+    var errorResponse = new ErrorResponse();
+    errorResponse.setTimestamp(OffsetDateTime.now());
+    errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+    errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+    errorResponse.setMessage(ex.getMessage());
+    errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
   }
 
   @ExceptionHandler(Exception.class)

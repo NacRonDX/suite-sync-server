@@ -76,12 +76,18 @@ public class User {
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 
+  @Column(name = "confirmation_token")
+  private String confirmationToken;
+
+  @Column(name = "confirmation_token_expiry")
+  private LocalDateTime confirmationTokenExpiry;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();
     updatedAt = LocalDateTime.now();
     if (status == null) {
-      status = UserStatus.ACTIVE;
+      status = UserStatus.INACTIVE;
     }
   }
 

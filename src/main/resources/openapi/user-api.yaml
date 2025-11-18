@@ -224,10 +224,9 @@ paths:
       tags:
         - Users
       summary: Activate user account
-      description: Activate a deactivated user account
+      description: Activate a user account using the confirmation token sent via email
       operationId: activateUser
-      security:
-        - bearerAuth: []
+      security: []
       parameters:
         - name: userId
           in: path
@@ -236,6 +235,12 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: token
+          in: query
+          description: Confirmation token sent to user's email
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: User activated successfully
@@ -243,14 +248,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserResponse'
-        '404':
-          description: User not found
+        '400':
+          description: Invalid or expired token
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Unauthorized
+        '404':
+          description: User not found
           content:
             application/json:
               schema:

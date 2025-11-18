@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-confirmation-token-fields
+      author: suitesync
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: confirmation_token
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: confirmation_token_expiry
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true
+

@@ -10,8 +10,10 @@ import com.nacrondx.suitesync.model.user.UserResponse;
 import com.nacrondx.suitesync.model.user.UserStatus;
 import com.nacrondx.suitesync.model.user.UserType;
 import com.nacrondx.suitesync.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final EmailService emailService;
 
   @Transactional
   public UserResponse createUser(CreateUserRequest request) {
@@ -32,6 +35,9 @@ public class UserService {
       throw new IllegalArgumentException(
           "User with email " + request.getEmail() + " already exists");
     }
+
+    var confirmationToken = UUID.randomUUID().toString();
+    var tokenExpiry = LocalDateTime.now().plusHours(24);
 
     var user =
         User.builder()
@@ -41,7 +47,9 @@ public class UserService {
             .phoneNumber(request.getPhoneNumber())
             .passwordHash(passwordEncoder.encode(request.getPassword()))
             .userType(User.UserType.valueOf(request.getUserType().name()))
-            .status(User.UserStatus.INACTIVE) // New users start as INACTIVE until activated
+            .status(User.UserStatus.INACTIVE)
+            .confirmationToken(confirmationToken)
+            .confirmationTokenExpiry(tokenExpiry)
             .build();
 
     if (request.getAddress() != null) {
@@ -55,7 +63,38 @@ public class UserService {
 
     var savedUser = userRepository.save(user);
 
+    emailService.sendConfirmationEmail(
+        savedUser.getEmail(), savedUser.getFirstName(), savedUser.getId(), confirmationToken);
+
     return mapToUserResponse(savedUser);
+  }
+
+  @Transactional
+  public UserResponse activateUser(Long userId, String token) {
+    var user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+    if (user.getStatus() == User.UserStatus.ACTIVE) {
+      throw new IllegalStateException("User account is already active");
+    }
+
+    if (user.getConfirmationToken() == null || !user.getConfirmationToken().equals(token)) {
+      throw new IllegalArgumentException("Invalid confirmation token");
+    }
+
+    if (user.getConfirmationTokenExpiry() == null
+        || user.getConfirmationTokenExpiry().isBefore(LocalDateTime.now())) {
+      throw new IllegalArgumentException("Confirmation token has expired");
+    }
+
+    user.setStatus(User.UserStatus.ACTIVE);
+    user.setConfirmationToken(null);
+    user.setConfirmationTokenExpiry(null);
+
+    var activatedUser = userRepository.save(user);
+    return mapToUserResponse(activatedUser);
   }
 
   @Transactional(readOnly = true)

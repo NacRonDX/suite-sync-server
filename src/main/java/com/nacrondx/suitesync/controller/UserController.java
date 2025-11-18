@@ -25,9 +25,8 @@ public class UserController implements UsersApi {
   }
 
   @Override
-  @PreAuthorize("isAuthenticated()")
-  public ResponseEntity<UserResponse> activateUser(Long userId) {
-    return UsersApi.super.activateUser(userId);
+  public ResponseEntity<UserResponse> activateUser(Long userId, String token) {
+    return ResponseEntity.ok(userService.activateUser(userId, token));
   }
 
   @Override
