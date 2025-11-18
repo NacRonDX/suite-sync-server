@@ -17,6 +17,7 @@ import com.nacrondx.suitesync.model.user.UpdateUserRequest;
 import com.nacrondx.suitesync.model.user.UserType;
 import com.nacrondx.suitesync.repository.UserRepository;
 import com.nacrondx.suitesync.service.EmailService;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -386,7 +387,7 @@ class UserControllerIntegrationTest {
             .userType(User.UserType.CUSTOMER)
             .status(User.UserStatus.INACTIVE)
             .confirmationToken("valid-token-123")
-            .confirmationTokenExpiry(java.time.LocalDateTime.now().plusHours(24))
+            .confirmationTokenExpiry(LocalDateTime.now().plusHours(24))
             .build();
 
     inactiveUser = userRepository.save(inactiveUser);
@@ -416,7 +417,7 @@ class UserControllerIntegrationTest {
             .userType(User.UserType.CUSTOMER)
             .status(User.UserStatus.INACTIVE)
             .confirmationToken("valid-token-456")
-            .confirmationTokenExpiry(java.time.LocalDateTime.now().plusHours(24))
+            .confirmationTokenExpiry(LocalDateTime.now().plusHours(24))
             .build();
 
     inactiveUser = userRepository.save(inactiveUser);
@@ -439,7 +440,7 @@ class UserControllerIntegrationTest {
             .userType(User.UserType.CUSTOMER)
             .status(User.UserStatus.INACTIVE)
             .confirmationToken("expired-token-789")
-            .confirmationTokenExpiry(java.time.LocalDateTime.now().minusHours(1))
+            .confirmationTokenExpiry(LocalDateTime.now().minusHours(1))
             .build();
 
     inactiveUser = userRepository.save(inactiveUser);
@@ -479,7 +480,7 @@ class UserControllerIntegrationTest {
             .userType(User.UserType.CUSTOMER)
             .status(User.UserStatus.INACTIVE)
             .confirmationToken("public-token-123")
-            .confirmationTokenExpiry(java.time.LocalDateTime.now().plusHours(24))
+            .confirmationTokenExpiry(LocalDateTime.now().plusHours(24))
             .build();
 
     inactiveUser = userRepository.save(inactiveUser);

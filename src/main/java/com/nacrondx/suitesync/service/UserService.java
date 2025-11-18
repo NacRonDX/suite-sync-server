@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -161,7 +160,7 @@ public class UserService {
       var filteredUsers =
           userPage.getContent().stream()
               .filter(user -> user.getUserType() == entityUserType)
-              .collect(Collectors.toList());
+              .toList();
       userPage =
           new org.springframework.data.domain.PageImpl<>(
               filteredUsers, pageable, userPage.getTotalElements());
@@ -170,8 +169,7 @@ public class UserService {
     }
 
     var response = new UserPageResponse();
-    response.setContent(
-        userPage.getContent().stream().map(this::mapToUserResponse).collect(Collectors.toList()));
+    response.setContent(userPage.getContent().stream().map(this::mapToUserResponse).toList());
     response.setPage(userPage.getNumber());
     response.setSize(userPage.getSize());
     response.setTotalElements(userPage.getTotalElements());

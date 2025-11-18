@@ -10,12 +10,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.nacrondx.suitesync.entity.User;
+import com.nacrondx.suitesync.exception.ResourceNotFoundException;
 import com.nacrondx.suitesync.model.user.Address;
 import com.nacrondx.suitesync.model.user.CreateUserRequest;
+import com.nacrondx.suitesync.model.user.UpdateUserRequest;
 import com.nacrondx.suitesync.model.user.UserStatus;
 import com.nacrondx.suitesync.model.user.UserType;
 import com.nacrondx.suitesync.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -167,7 +171,7 @@ class UserServiceTest {
 
   @Test
   void getUserByIdShouldReturnUserResponse() {
-    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(savedUser));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(savedUser));
 
     var response = userService.getUserById(1L);
 
@@ -181,12 +185,10 @@ class UserServiceTest {
 
   @Test
   void getUserByIdWithNonExistentIdShouldThrowException() {
-    when(userRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+    when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
     var exception =
-        assertThrows(
-            com.nacrondx.suitesync.exception.ResourceNotFoundException.class,
-            () -> userService.getUserById(999L));
+        assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(999L));
 
     assertEquals("User not found with id: 999", exception.getMessage());
     verify(userRepository).findById(999L);
@@ -194,7 +196,7 @@ class UserServiceTest {
 
   @Test
   void updateUserShouldUpdateAllFields() {
-    var updateRequest = new com.nacrondx.suitesync.model.user.UpdateUserRequest();
+    var updateRequest = new UpdateUserRequest();
     updateRequest.setFirstName("Jane");
     updateRequest.setLastName("Smith");
     updateRequest.setPhoneNumber("+9876543210");
@@ -227,7 +229,7 @@ class UserServiceTest {
             .updatedAt(LocalDateTime.now())
             .build();
 
-    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(savedUser));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(savedUser));
     when(userRepository.save(any(User.class))).thenReturn(updatedUser);
 
     var response = userService.updateUser(1L, updateRequest);
@@ -246,10 +248,10 @@ class UserServiceTest {
 
   @Test
   void updateUserWithPartialDataShouldOnlyUpdateProvidedFields() {
-    var updateRequest = new com.nacrondx.suitesync.model.user.UpdateUserRequest();
+    var updateRequest = new UpdateUserRequest();
     updateRequest.setFirstName("Jane");
 
-    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(savedUser));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(savedUser));
     when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
     userService.updateUser(1L, updateRequest);
@@ -264,15 +266,14 @@ class UserServiceTest {
 
   @Test
   void updateUserWithNonExistentIdShouldThrowException() {
-    var updateRequest = new com.nacrondx.suitesync.model.user.UpdateUserRequest();
+    var updateRequest = new UpdateUserRequest();
     updateRequest.setFirstName("Jane");
 
-    when(userRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+    when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
     var exception =
         assertThrows(
-            com.nacrondx.suitesync.exception.ResourceNotFoundException.class,
-            () -> userService.updateUser(999L, updateRequest));
+            ResourceNotFoundException.class, () -> userService.updateUser(999L, updateRequest));
 
     assertEquals("User not found with id: 999", exception.getMessage());
     verify(userRepository).findById(999L);
@@ -293,9 +294,7 @@ class UserServiceTest {
     when(userRepository.existsById(999L)).thenReturn(false);
 
     var exception =
-        assertThrows(
-            com.nacrondx.suitesync.exception.ResourceNotFoundException.class,
-            () -> userService.deleteUser(999L));
+        assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(999L));
 
     assertEquals("User not found with id: 999", exception.getMessage());
     verify(userRepository).existsById(999L);
@@ -317,7 +316,7 @@ class UserServiceTest {
             .updatedAt(LocalDateTime.now())
             .build();
 
-    var users = java.util.List.of(savedUser, user2);
+    var users = List.of(savedUser, user2);
     var page =
         new org.springframework.data.domain.PageImpl<>(
             users, org.springframework.data.domain.PageRequest.of(0, 20), 2);
@@ -340,7 +339,7 @@ class UserServiceTest {
   void getAllUsersWithDefaultParametersShouldUseDefaults() {
     var page =
         new org.springframework.data.domain.PageImpl<>(
-            java.util.List.of(savedUser), org.springframework.data.domain.PageRequest.of(0, 20), 1);
+            List.of(savedUser), org.springframework.data.domain.PageRequest.of(0, 20), 1);
 
     when(userRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
         .thenReturn(page);
@@ -383,7 +382,7 @@ class UserServiceTest {
             .updatedAt(LocalDateTime.now())
             .build();
 
-    var users = java.util.List.of(customerUser, staffUser);
+    var users = List.of(customerUser, staffUser);
     var page =
         new org.springframework.data.domain.PageImpl<>(
             users, org.springframework.data.domain.PageRequest.of(0, 20), 2);
@@ -453,7 +452,7 @@ class UserServiceTest {
             .updatedAt(LocalDateTime.now())
             .build();
 
-    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(inactiveUser));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(inactiveUser));
     when(userRepository.save(any(User.class))).thenReturn(activatedUser);
 
     var response = userService.activateUser(1L, "valid-token-123");
@@ -489,7 +488,7 @@ class UserServiceTest {
             .updatedAt(LocalDateTime.now().minusDays(1))
             .build();
 
-    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(inactiveUser));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(inactiveUser));
 
     var exception =
         assertThrows(
@@ -518,7 +517,7 @@ class UserServiceTest {
             .updatedAt(LocalDateTime.now())
             .build();
 
-    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(inactiveUser));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(inactiveUser));
 
     var exception =
         assertThrows(
@@ -546,7 +545,7 @@ class UserServiceTest {
             .updatedAt(LocalDateTime.now())
             .build();
 
-    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(activeUser));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(activeUser));
 
     var exception =
         assertThrows(IllegalStateException.class, () -> userService.activateUser(1L, "any-token"));
@@ -557,12 +556,11 @@ class UserServiceTest {
 
   @Test
   void activateUserWithNonExistentUserShouldThrowException() {
-    when(userRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+    when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
     var exception =
         assertThrows(
-            com.nacrondx.suitesync.exception.ResourceNotFoundException.class,
-            () -> userService.activateUser(999L, "any-token"));
+            ResourceNotFoundException.class, () -> userService.activateUser(999L, "any-token"));
 
     assertEquals("User not found with id: 999", exception.getMessage());
     verify(userRepository).findById(999L);

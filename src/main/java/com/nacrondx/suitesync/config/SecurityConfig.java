@@ -3,8 +3,6 @@ package com.nacrondx.suitesync.config;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
-import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.proc.SecurityContext;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -32,7 +30,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-
   @Value("${jwt.public-key}")
   private String publicKey;
 
@@ -41,7 +38,7 @@ public class SecurityConfig {
 
   private RSAPublicKey getPublicKey() {
     try {
-      byte[] keyBytes = Base64.getDecoder().decode(publicKey);
+      var keyBytes = Base64.getDecoder().decode(publicKey);
       var spec = new X509EncodedKeySpec(keyBytes);
       var keyFactory = KeyFactory.getInstance("RSA");
       return (RSAPublicKey) keyFactory.generatePublic(spec);
@@ -87,8 +84,8 @@ public class SecurityConfig {
 
   @Bean
   public JwtEncoder jwtEncoder() {
-    RSAKey rsaKey = new RSAKey.Builder(getPublicKey()).privateKey(getPrivateKey()).build();
-    JWKSource<SecurityContext> jwkSource = new ImmutableJWKSet<>(new JWKSet(rsaKey));
+    var rsaKey = new RSAKey.Builder(getPublicKey()).privateKey(getPrivateKey()).build();
+    var jwkSource = new ImmutableJWKSet<>(new JWKSet(rsaKey));
     return new NimbusJwtEncoder(jwkSource);
   }
 
