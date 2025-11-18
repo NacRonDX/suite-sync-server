@@ -82,6 +82,10 @@ public class EmailService {
       request.setMethod(Method.POST);
       request.setEndpoint("mail/send");
       request.setBody(mail.build());
+      var response = sg.api(request);
+      log.info(String.valueOf(response.getStatusCode()));
+      log.info(response.getBody());
+      System.out.println(response.getHeaders());
       log.info("Confirmation email sent successfully to: {}", email);
 
     } catch (IOException e) {
