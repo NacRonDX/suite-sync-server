@@ -48,6 +48,7 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.testcontainers: INFO
     com.nacrondx.suitesync: DEBUG
+    web: debug
 
 springdoc:
   api-docs:
