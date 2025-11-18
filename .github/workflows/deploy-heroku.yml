@@ -33,6 +33,24 @@ jobs:
           JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
         run: ./gradlew test
         
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Configure Heroku Config Vars
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
+          JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
+        run: |
+          # Set JWT keys as config vars on Heroku before deployment
+          heroku config:set JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY" -a $HEROKU_APP_NAME
+          heroku config:set JWT_PUBLIC_KEY="$JWT_PUBLIC_KEY" -a $HEROKU_APP_NAME
+          
+          # Set other config vars if needed
+          heroku config:set JAVA_OPTS="-Xmx300m -Xss512k" -a $HEROKU_APP_NAME
+
       - name: Deploy to Heroku
         uses: akhileshns/heroku-deploy@v3.13.15
         with:
@@ -40,22 +58,4 @@ jobs:
           heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
           usedocker: false
-          buildpack: "https://github.com/heroku/heroku-buildpack-gradle.git"
-          
-      - name: Configure Heroku Config Vars
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
-        run: |
-          # Install Heroku CLI if not present
-          if ! command -v heroku &> /dev/null; then
-            curl https://cli-assets.heroku.com/install.sh | sh
-          fi
-
-          # Set JWT keys as config vars on Heroku
-          echo "${{ secrets.JWT_PRIVATE_KEY }}" | heroku config:set JWT_PRIVATE_KEY="$(cat)" -a $HEROKU_APP_NAME
-          echo "${{ secrets.JWT_PUBLIC_KEY }}" | heroku config:set JWT_PUBLIC_KEY="$(cat)" -a $HEROKU_APP_NAME
-          
-          # Set other config vars if needed
-          heroku config:set JAVA_OPTS="-Xmx300m -Xss512k" -a $HEROKU_APP_NAME
 
