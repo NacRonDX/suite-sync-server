@@ -37,7 +37,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.liquibase:liquibase-core'
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 	implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
 
 	compileOnly 'org.projectlombok:lombok'
@@ -90,7 +90,8 @@ openApiGenerate {
 			dateLibrary: "java8",
 			interfaceOnly: "true",
 			useSpringBoot3: "true",
-			useTags: "true"
+			useTags: "true",
+			documentationProvider: "none"
 	]
 }
 
@@ -105,7 +106,8 @@ tasks.register('openApiGenerateAuth', org.openapitools.generator.gradle.plugin.t
 			interfaceOnly: "true",
 			useSpringBoot3: "true",
 			useTags: "true",
-			apiUtil: "false"
+			apiUtil: "false",
+			documentationProvider: "none"
 	]
 }
 

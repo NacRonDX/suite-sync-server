@@ -60,12 +60,18 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
+    var path = request.getDescription(false).replace("uri=", "");
+
+    if (path.contains("/v3/api-docs") || path.contains("/swagger-ui")) {
+      throw new RuntimeException(ex);
+    }
+
     var errorResponse = new ErrorResponse();
     errorResponse.setTimestamp(OffsetDateTime.now());
     errorResponse.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
     errorResponse.setError(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
     errorResponse.setMessage("An unexpected error occurred");
-    errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+    errorResponse.setPath(path);
 
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
   }

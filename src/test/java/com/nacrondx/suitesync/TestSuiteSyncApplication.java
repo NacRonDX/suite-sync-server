@@ -9,6 +9,7 @@ public class TestSuiteSyncApplication {
   public static void main(String[] args) {
     SpringApplication.from(SuiteSyncApplication::main)
         .with(TestContainersConfiguration.class)
+        .withAdditionalProfiles("test")
         .run(args);
   }
 }

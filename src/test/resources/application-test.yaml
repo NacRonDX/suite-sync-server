@@ -46,19 +46,12 @@ jwt:
   public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0CIGo3R3cm9ERk4G0dloVxUIatn2wlXIjU92kIhNQO630dTh3r83y0J7Uk5QiruzO3JtkzP99sYiCJG4WEp4jBHCF8SQXHJRNN4LI6YFw2zESAPuvZyJLQWddjuYzcNBxPqLX3tXC52TeCM93N3/kDkE4BLF7tSeabw1Kh+Vpd5cUfKDmtHz4i5AAxAl64wzsQ3wJNWpYOcUyk526XjXzT4EbCHx3AtBDfKB1q60oAnhjwrQHe3NFlHSLYpzWqskXDvRifNertLXpglV+Rz46F5oMc5TLRePFA/5GinTRWjbagYpXW9QPhOZLb1DUpML+Q/ePeSKRNH2RwMZ8uL8tQIDAQAB
   expiration: 3600000
 
-springdoc:
-  api-docs:
-    enabled: true
-  swagger-ui:
-    enabled: true
-    path: /swagger-ui.html
-
-#logging:
-#  level:
+logging:
+  level:
 #    org.hibernate.SQL: DEBUG
 #    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 #    org.testcontainers: INFO
 #    com.nacrondx.suitesync: DEBUG
+    web: debug
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-
