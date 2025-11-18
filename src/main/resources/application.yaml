@@ -42,6 +42,13 @@ jwt:
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
 
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.testcontainers: INFO
+    com.nacrondx.suitesync: DEBUG
+
 springdoc:
   api-docs:
     enabled: true
