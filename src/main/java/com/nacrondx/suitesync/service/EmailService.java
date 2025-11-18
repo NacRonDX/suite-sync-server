@@ -1,38 +1,37 @@
 package com.nacrondx.suitesync.service;
 
-import jakarta.mail.MessagingException;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
-  private final JavaMailSender mailSender;
-
-  @Value("${spring.mail.from}")
+  @Value("${app.mail.from}")
   private String fromEmail;
 
   @Value("${app.base-url}")
   private String baseUrl;
 
+  @Value("${app.mail.api-key}")
+  private String apiKey;
+
   public void sendConfirmationEmail(String email, String firstName, Long userId, String token) {
-    try {
-      var message = mailSender.createMimeMessage();
-      var helper = new MimeMessageHelper(message, true, "UTF-8");
-
-      helper.setFrom(fromEmail);
-      helper.setTo(email);
-      helper.setSubject("Welcome to Suite Sync - Confirm Your Account");
-
-      var activationLink = baseUrl + "/api/v1/users/" + userId + "/activate?token=" + token;
-
-      var htmlContent =
-          """
+    var from = new Email(fromEmail);
+    var subject = "Welcome to Suite Sync - Confirm Your Account";
+    var to = new Email(email);
+    var activationLink = baseUrl + "/api/v1/users/" + userId + "/activate?token=" + token;
+    var htmlContent =
+        """
           <!DOCTYPE html>
           <html>
           <head>
@@ -71,14 +70,21 @@ public class EmailService {
           </body>
           </html>
           """
-              .formatted(firstName, activationLink, activationLink);
+            .formatted(firstName, activationLink, activationLink);
+    var content = new Content("text/html", htmlContent);
+    var mail = new Mail(from, subject, to, content);
 
-      helper.setText(htmlContent, true);
+    var sg = new SendGrid(apiKey);
+    sg.setDataResidency("eu");
+    var request = new Request();
 
-      mailSender.send(message);
+    try {
+      request.setMethod(Method.POST);
+      request.setEndpoint("mail/send");
+      request.setBody(mail.build());
       log.info("Confirmation email sent successfully to: {}", email);
 
-    } catch (MessagingException e) {
+    } catch (IOException e) {
       log.error("Failed to send confirmation email to: {}", email, e);
       throw new RuntimeException("Failed to send confirmation email", e);
     }

@@ -25,19 +25,6 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
     drop-first: true
 
-  mail:
-    host: localhost
-    port: 3025
-    username: test
-    password: test
-    properties:
-      mail:
-        smtp:
-          auth: false
-          starttls:
-            enable: false
-    from: suitesync@no-reply.com
-
 app:
   base-url: http://localhost:8080
 
@@ -52,6 +39,6 @@ logging:
 #    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 #    org.testcontainers: INFO
 #    com.nacrondx.suitesync: DEBUG
-    web: debug
+#    web: debug
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
