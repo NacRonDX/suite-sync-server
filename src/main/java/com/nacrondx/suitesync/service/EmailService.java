@@ -75,7 +75,7 @@ public class EmailService {
     var mail = new Mail(from, subject, to, content);
 
     var sg = new SendGrid(apiKey);
-    sg.setDataResidency("eu");
+//    sg.setDataResidency("eu");
     var request = new Request();
 
     try {
