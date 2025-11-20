@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -52,6 +53,20 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(IllegalStateException.class)
   public ResponseEntity<ErrorResponse> handleIllegalStateException(
       IllegalStateException ex, WebRequest request) {
+    var errorResponse = new ErrorResponse();
+    errorResponse.setTimestamp(OffsetDateTime.now());
+    errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+    errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+    errorResponse.setMessage(ex.getMessage());
+    errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+    log.debug(ex.getMessage(), ex);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+
+  @ExceptionHandler(BadCredentialsException.class)
+  public ResponseEntity<ErrorResponse> handleBadCredentialsException(
+      BadCredentialsException ex, WebRequest request) {
     var errorResponse = new ErrorResponse();
     errorResponse.setTimestamp(OffsetDateTime.now());
     errorResponse.setStatus(HttpStatus.BAD_REQUEST.value());
