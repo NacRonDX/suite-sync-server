@@ -75,7 +75,6 @@ public class EmailService {
     var mail = new Mail(from, subject, to, content);
 
     var sg = new SendGrid(apiKey);
-//    sg.setDataResidency("eu");
     var request = new Request();
 
     try {
@@ -83,9 +82,9 @@ public class EmailService {
       request.setEndpoint("mail/send");
       request.setBody(mail.build());
       var response = sg.api(request);
-      log.info(String.valueOf(response.getStatusCode()));
-      log.info(response.getBody());
-      System.out.println(response.getHeaders());
+      log.debug("Response status code {}", response.getStatusCode());
+      log.debug("Response body {}", response.getBody());
+      log.debug("Response headers {}", response.getHeaders());
       log.info("Confirmation email sent successfully to: {}", email);
 
     } catch (IOException e) {
