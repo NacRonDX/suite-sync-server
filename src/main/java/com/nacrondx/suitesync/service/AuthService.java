@@ -11,16 +11,17 @@ import com.nacrondx.suitesync.model.auth.TokenValidationResponse;
 import com.nacrondx.suitesync.repository.UserRepository;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class AuthService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
@@ -39,16 +40,19 @@ public class AuthService {
   }
 
   public LoginResponse authenticate(LoginRequest loginRequest) {
+    log.info("Authenticating user with email: {}", loginRequest.getEmail());
     var user =
         userRepository
             .findByEmail(loginRequest.getEmail())
             .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
     if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPasswordHash())) {
+      log.warn("Authentication failed for email: {}", loginRequest.getEmail());
       throw new BadCredentialsException("Invalid email or password");
     }
 
     if (user.getStatus() != User.UserStatus.ACTIVE) {
+      log.warn("Authentication attempt for inactive account: {}", loginRequest.getEmail());
       throw new BadCredentialsException("Account is not active");
     }
 
@@ -62,6 +66,7 @@ public class AuthService {
     response.setExpiresIn(jwtService.getExpirationSeconds());
     response.setUserId(user.getId());
     response.setUserType(LoginResponse.UserTypeEnum.fromValue(user.getUserType().name()));
+    log.info("User {} authenticated successfully", loginRequest.getEmail());
 
     return response;
   }
@@ -104,7 +109,7 @@ public class AuthService {
 
   public LoginResponse refreshToken(RefreshTokenRequest request) {
     try {
-      Jwt jwt = jwtDecoder.decode(request.getRefreshToken());
+      var jwt = jwtDecoder.decode(request.getRefreshToken());
 
       var tokenType = jwt.getClaim("type");
       if (!"refresh".equals(tokenType)) {

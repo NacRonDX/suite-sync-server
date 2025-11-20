@@ -8,6 +8,7 @@ import com.nacrondx.suitesync.model.user.UserResponse;
 import com.nacrondx.suitesync.model.user.UserType;
 import com.nacrondx.suitesync.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class UserController implements UsersApi {
   private final UserService userService;
 
@@ -26,6 +28,7 @@ public class UserController implements UsersApi {
 
   @Override
   public ResponseEntity<UserResponse> activateUser(Long userId, String token) {
+    log.info("Received activation request for userId: {}", userId);
     return ResponseEntity.ok(userService.activateUser(userId, token));
   }
 

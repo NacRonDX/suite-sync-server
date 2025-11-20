@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
@@ -30,7 +32,9 @@ public class UserService {
 
   @Transactional
   public UserResponse createUser(CreateUserRequest request) {
+    log.info("Creating user with email: {}", request.getEmail());
     if (userRepository.existsByEmail(request.getEmail())) {
+      log.warn("User with email: {} already exists", request.getEmail());
       throw new IllegalArgumentException(
           "User with email " + request.getEmail() + " already exists");
     }
@@ -61,7 +65,9 @@ public class UserService {
     }
 
     var savedUser = userRepository.save(user);
+    log.info("Successfully created user with ID: {}", savedUser.getId());
 
+    log.info("Sending confirmation email to: {}", savedUser.getEmail());
     emailService.sendConfirmationEmail(
         savedUser.getEmail(), savedUser.getFirstName(), savedUser.getId(), confirmationToken);
 
@@ -70,21 +76,25 @@ public class UserService {
 
   @Transactional
   public UserResponse activateUser(Long userId, String token) {
+    log.info("Fetching user with ID: {}", userId);
     var user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
     if (user.getStatus() == User.UserStatus.ACTIVE) {
+      log.warn("User with ID: {} is already active", userId);
       throw new IllegalStateException("User account is already active");
     }
 
     if (user.getConfirmationToken() == null || !user.getConfirmationToken().equals(token)) {
+      log.warn("Invalid confirmation token for user ID: {}", userId);
       throw new IllegalArgumentException("Invalid confirmation token");
     }
 
     if (user.getConfirmationTokenExpiry() == null
         || user.getConfirmationTokenExpiry().isBefore(LocalDateTime.now())) {
+      log.warn("Confirmation token expired for user ID: {}", userId);
       throw new IllegalArgumentException("Confirmation token has expired");
     }
 
@@ -93,11 +103,13 @@ public class UserService {
     user.setConfirmationTokenExpiry(null);
 
     var activatedUser = userRepository.save(user);
+    log.info("Successfully activated user with ID: {}", userId);
     return mapToUserResponse(activatedUser);
   }
 
   @Transactional(readOnly = true)
   public UserResponse getUserById(Long userId) {
+    log.info("Fetching user with ID: {}", userId);
     var user =
         userRepository
             .findById(userId)
@@ -107,6 +119,7 @@ public class UserService {
 
   @Transactional
   public UserResponse updateUser(Long userId, UpdateUserRequest request) {
+    log.info("Updating user with ID: {}", userId);
     var user =
         userRepository
             .findById(userId)
@@ -135,15 +148,18 @@ public class UserService {
     }
 
     var updatedUser = userRepository.save(user);
+    log.info("Successfully updated user with ID: {}", userId);
     return mapToUserResponse(updatedUser);
   }
 
   @Transactional
   public void deleteUser(Long userId) {
+    log.info("Deleting user with ID: {}", userId);
     if (!userRepository.existsById(userId)) {
       throw new ResourceNotFoundException("User not found with id: " + userId);
     }
     userRepository.deleteById(userId);
+    log.info("Successfully deleted user with ID: {}", userId);
   }
 
   @Transactional(readOnly = true)
