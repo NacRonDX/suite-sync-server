@@ -33,26 +33,26 @@ public class UserController implements UsersApi {
   }
 
   @Override
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("isAuthenticated() and #userId == authentication.token.claims['userId']")
   public ResponseEntity<UserResponse> getUserById(Long userId) {
     return ResponseEntity.ok(userService.getUserById(userId));
   }
 
   @Override
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("isAuthenticated() and #userId == authentication.token.claims['userId']")
   public ResponseEntity<UserResponse> updateUser(Long userId, UpdateUserRequest updateUserRequest) {
     return ResponseEntity.ok(userService.updateUser(userId, updateUserRequest));
   }
 
   @Override
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("isAuthenticated() and #userId == authentication.token.claims['userId']")
   public ResponseEntity<Void> deleteUser(Long userId) {
     userService.deleteUser(userId);
     return ResponseEntity.noContent().build();
   }
 
   @Override
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<UserPageResponse> getAllUsers(
       UserType userType, Integer page, Integer size) {
     return ResponseEntity.ok(userService.getAllUsers(userType, page, size));

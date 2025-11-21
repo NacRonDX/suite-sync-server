@@ -209,7 +209,7 @@ public class UserService {
         || user.getState() != null
         || user.getPostalCode() != null
         || user.getCountry() != null) {
-      Address address = new Address();
+      var address = new Address();
       address.setStreet(user.getStreet());
       address.setCity(user.getCity());
       address.setState(user.getState());

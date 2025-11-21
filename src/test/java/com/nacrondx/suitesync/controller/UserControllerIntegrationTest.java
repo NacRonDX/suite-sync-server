@@ -2,6 +2,7 @@ package com.nacrondx.suitesync.controller;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -126,10 +127,11 @@ class UserControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser
   void getUserByIdShouldReturnUser() throws Exception {
     mockMvc
-        .perform(get("/api/v1/users/" + testUser.getId()))
+        .perform(
+            get("/api/v1/users/" + testUser.getId())
+                .with(jwt().jwt(jwt -> jwt.claim("userId", testUser.getId()))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id", is(testUser.getId().intValue())))
         .andExpect(jsonPath("$.email", is("test@example.com")))
@@ -148,16 +150,23 @@ class UserControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser
   void getUserByIdWithNonExistentIdShouldReturnNotFound() throws Exception {
     mockMvc
-        .perform(get("/api/v1/users/999999"))
+        .perform(get("/api/v1/users/999999").with(jwt().jwt(jwt -> jwt.claim("userId", 999999L))))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message").exists());
   }
 
   @Test
-  @WithMockUser
+  void getUserByIdWithMismatchedUserIdShouldReturnForbidden() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/users/" + testUser.getId())
+                .with(jwt().jwt(jwt -> jwt.claim("userId", 999L))))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
   void updateUserShouldReturnUpdatedUser() throws Exception {
     var updateRequest = new UpdateUserRequest();
     updateRequest.setFirstName("Updated");
@@ -177,7 +186,8 @@ class UserControllerIntegrationTest {
         .perform(
             put("/api/v1/users/" + testUser.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateRequest)))
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .with(jwt().jwt(jwt -> jwt.claim("userId", testUser.getId()))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id", is(testUser.getId().intValue())))
         .andExpect(jsonPath("$.email", is("test@example.com")))
@@ -190,7 +200,6 @@ class UserControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser
   void updateUserWithPartialDataShouldOnlyUpdateProvidedFields() throws Exception {
     var updateRequest = new UpdateUserRequest();
     updateRequest.setFirstName("OnlyFirstName");
@@ -199,7 +208,8 @@ class UserControllerIntegrationTest {
         .perform(
             put("/api/v1/users/" + testUser.getId())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateRequest)))
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .with(jwt().jwt(jwt -> jwt.claim("userId", testUser.getId()))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.firstName", is("OnlyFirstName")))
         .andExpect(jsonPath("$.lastName", is("User")))
@@ -220,7 +230,6 @@ class UserControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser
   void updateUserWithNonExistentIdShouldReturnNotFound() throws Exception {
     var updateRequest = new UpdateUserRequest();
     updateRequest.setFirstName("Updated");
@@ -229,16 +238,38 @@ class UserControllerIntegrationTest {
         .perform(
             put("/api/v1/users/999999")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateRequest)))
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .with(jwt().jwt(jwt -> jwt.claim("userId", 999999L))))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message").exists());
   }
 
   @Test
-  @WithMockUser
+  void updateUserWithMismatchedUserIdShouldReturnForbidden() throws Exception {
+    var updateRequest = new UpdateUserRequest();
+    updateRequest.setFirstName("Updated");
+
+    mockMvc
+        .perform(
+            put("/api/v1/users/" + testUser.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest))
+                .with(jwt().jwt(jwt -> jwt.claim("userId", 999L))))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
   void deleteUserShouldReturnNoContent() throws Exception {
-    mockMvc.perform(delete("/api/v1/users/" + testUser.getId())).andExpect(status().isNoContent());
-    mockMvc.perform(get("/api/v1/users/" + testUser.getId())).andExpect(status().isNotFound());
+    mockMvc
+        .perform(
+            delete("/api/v1/users/" + testUser.getId())
+                .with(jwt().jwt(jwt -> jwt.claim("userId", testUser.getId()))))
+        .andExpect(status().isNoContent());
+    mockMvc
+        .perform(
+            get("/api/v1/users/" + testUser.getId())
+                .with(jwt().jwt(jwt -> jwt.claim("userId", testUser.getId()))))
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -249,16 +280,25 @@ class UserControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser
   void deleteUserWithNonExistentIdShouldReturnNotFound() throws Exception {
     mockMvc
-        .perform(delete("/api/v1/users/999999"))
+        .perform(
+            delete("/api/v1/users/999999").with(jwt().jwt(jwt -> jwt.claim("userId", 999999L))))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message").exists());
   }
 
   @Test
-  @WithMockUser
+  void deleteUserWithMismatchedUserIdShouldReturnForbidden() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/v1/users/" + testUser.getId())
+                .with(jwt().jwt(jwt -> jwt.claim("userId", 999L))))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(roles = "ADMIN")
   void getAllUsersShouldReturnPagedUsers() throws Exception {
     var user2 =
         User.builder()
@@ -296,7 +336,7 @@ class UserControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser
+  @WithMockUser(roles = "ADMIN")
   void getAllUsersWithPaginationShouldReturnCorrectPage() throws Exception {
     for (int i = 1; i <= 25; i++) {
       var user =
@@ -330,7 +370,7 @@ class UserControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser
+  @WithMockUser(roles = "ADMIN")
   void getAllUsersFilteredByUserTypeShouldReturnFilteredResults() throws Exception {
     var staffUser =
         User.builder()
@@ -373,6 +413,12 @@ class UserControllerIntegrationTest {
   @Test
   void getAllUsersWithoutAuthShouldReturnUnauthorized() throws Exception {
     mockMvc.perform(get("/api/v1/users")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @WithMockUser(roles = "CUSTOMER")
+  void getAllUsersWithoutAdminRoleShouldReturnForbidden() throws Exception {
+    mockMvc.perform(get("/api/v1/users")).andExpect(status().isForbidden());
   }
 
   @Test

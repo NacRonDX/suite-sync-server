@@ -112,10 +112,44 @@ tasks.register('openApiGenerateAuth', org.openapitools.generator.gradle.plugin.t
 	]
 }
 
+tasks.register('openApiGenerateBooking', org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+	generatorName = 'spring'
+	inputSpec = "$rootDir/src/main/resources/openapi/booking-api.yaml".toString()
+	outputDir = "${layout.buildDirectory.get().asFile}/generated/booking".toString()
+	apiPackage = 'com.nacrondx.suitesync.api'
+	modelPackage = 'com.nacrondx.suitesync.model.booking'
+	configOptions = [
+			dateLibrary: "java8",
+			interfaceOnly: "true",
+			useSpringBoot3: "true",
+			useTags: "true",
+			apiUtil: "false",
+			documentationProvider: "none"
+	]
+}
+
+tasks.register('openApiGenerateRoom', org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+	generatorName = 'spring'
+	inputSpec = "$rootDir/src/main/resources/openapi/room-api.yaml".toString()
+	outputDir = "${layout.buildDirectory.get().asFile}/generated/room".toString()
+	apiPackage = 'com.nacrondx.suitesync.api'
+	modelPackage = 'com.nacrondx.suitesync.model.room'
+	configOptions = [
+			dateLibrary: "java8",
+			interfaceOnly: "true",
+			useSpringBoot3: "true",
+			useTags: "true",
+			apiUtil: "false",
+			documentationProvider: "none"
+	]
+}
+
 sourceSets.main.java.srcDirs += "${layout.buildDirectory.get().asFile}/generated/user/src/main/java"
 sourceSets.main.java.srcDirs += "${layout.buildDirectory.get().asFile}/generated/auth/src/main/java"
+sourceSets.main.java.srcDirs += "${layout.buildDirectory.get().asFile}/generated/booking/src/main/java"
+sourceSets.main.java.srcDirs += "${layout.buildDirectory.get().asFile}/generated/room/src/main/java"
 
-compileJava.dependsOn tasks.openApiGenerate, tasks.openApiGenerateAuth
+compileJava.dependsOn tasks.openApiGenerate, tasks.openApiGenerateAuth, tasks.openApiGenerateBooking, tasks.openApiGenerateRoom
 
 tasks.register('bootRunWithTestcontainers') {
 	group = 'application'
@@ -140,10 +174,18 @@ tasks.named('check') {
 tasks.register('removeDuplicateApiUtil') {
     doLast {
         delete file("${layout.buildDirectory.get().asFile}/generated/auth/src/main/java/com/nacrondx/suitesync/api/ApiUtil.java")
+        delete file("${layout.buildDirectory.get().asFile}/generated/booking/src/main/java/com/nacrondx/suitesync/api/ApiUtil.java")
+        delete file("${layout.buildDirectory.get().asFile}/generated/room/src/main/java/com/nacrondx/suitesync/api/ApiUtil.java")
     }
 }
 
 tasks.openApiGenerateAuth.configure {
+    finalizedBy(tasks.removeDuplicateApiUtil)
+}
+tasks.openApiGenerateBooking.configure {
+    finalizedBy(tasks.removeDuplicateApiUtil)
+}
+tasks.openApiGenerateRoom.configure {
     finalizedBy(tasks.removeDuplicateApiUtil)
 }
 

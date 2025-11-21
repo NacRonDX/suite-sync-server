@@ -1,0 +1,437 @@
+openapi: 3.0.3
+info:
+  title: Suite Sync Booking Management API
+  description: API for managing room bookings in the hotel management system
+  version: 1.0.0
+  contact:
+    name: Suite Sync Team
+    email: support@suitesync.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Bookings
+    description: Booking management operations
+
+paths:
+  /api/v1/bookings:
+    get:
+      tags:
+        - Bookings
+      summary: Get all bookings
+      description: Retrieve a list of bookings for the authenticated user (or all bookings if admin/staff)
+      operationId: getAllBookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter bookings by status
+          required: false
+          schema:
+            $ref: '#/components/schemas/BookingStatus'
+        - name: page
+          in: query
+          description: Page number (0-based)
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingPageResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Bookings
+      summary: Create a new booking
+      description: Create a new room booking
+      operationId: createBooking
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Room not available for the selected dates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/{bookingId}:
+    get:
+      tags:
+        - Bookings
+      summary: Get booking by ID
+      description: Retrieve a specific booking by its ID
+      operationId: getBookingById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookingId
+          in: path
+          description: ID of the booking to retrieve
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - not authorized to view this booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Bookings
+      summary: Update booking
+      description: Update an existing booking's information
+      operationId: updateBooking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookingId
+          in: path
+          description: ID of the booking to update
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookingRequest'
+      responses:
+        '200':
+          description: Booking updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - not authorized to update this booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/bookings/{bookingId}/cancel:
+    post:
+      tags:
+        - Bookings
+      summary: Cancel a booking
+      description: Cancel an existing booking
+      operationId: cancelBooking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookingId
+          in: path
+          description: ID of the booking to cancel
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Booking cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Cannot cancel booking (e.g., already cancelled or completed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - not authorized to cancel this booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    BookingStatus:
+      type: string
+      enum:
+        - PENDING
+        - CONFIRMED
+        - CHECKED_IN
+        - CHECKED_OUT
+        - CANCELLED
+      description: Status of the booking
+
+    CreateBookingRequest:
+      type: object
+      required:
+        - roomId
+        - checkInDate
+        - checkOutDate
+        - numberOfGuests
+      properties:
+        roomId:
+          type: integer
+          format: int64
+          description: ID of the room to book
+          example: 1
+        checkInDate:
+          type: string
+          format: date
+          description: Check-in date
+          example: 2023-12-20
+        checkOutDate:
+          type: string
+          format: date
+          description: Check-out date
+          example: 2023-12-25
+        numberOfGuests:
+          type: integer
+          minimum: 1
+          description: Number of guests
+          example: 2
+        specialRequests:
+          type: string
+          maxLength: 500
+          description: Special requests or notes
+          example: Late check-in requested
+
+    UpdateBookingRequest:
+      type: object
+      properties:
+        checkInDate:
+          type: string
+          format: date
+          description: Check-in date
+          example: 2023-12-20
+        checkOutDate:
+          type: string
+          format: date
+          description: Check-out date
+          example: 2023-12-25
+        numberOfGuests:
+          type: integer
+          minimum: 1
+          description: Number of guests
+          example: 2
+        specialRequests:
+          type: string
+          maxLength: 500
+          description: Special requests or notes
+          example: Late check-in requested
+
+    BookingResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier for the booking
+          example: 1
+        userId:
+          type: integer
+          format: int64
+          description: ID of the user who made the booking
+          example: 1
+        roomId:
+          type: integer
+          format: int64
+          description: ID of the booked room
+          example: 1
+        checkInDate:
+          type: string
+          format: date
+          description: Check-in date
+          example: 2023-12-20
+        checkOutDate:
+          type: string
+          format: date
+          description: Check-out date
+          example: 2023-12-25
+        numberOfGuests:
+          type: integer
+          description: Number of guests
+          example: 2
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        specialRequests:
+          type: string
+          description: Special requests or notes
+          example: Late check-in requested
+        totalPrice:
+          type: number
+          format: double
+          description: Total price for the booking
+          example: 750.00
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the booking was created
+          example: 2023-01-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the booking was last updated
+          example: 2023-01-15T10:30:00Z
+
+    BookingPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingResponse'
+        page:
+          type: integer
+          description: Current page number
+          example: 0
+        size:
+          type: integer
+          description: Number of items per page
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: Total number of bookings
+          example: 100
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 5
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the error
+          example: 2023-01-15T10:30:00Z
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        error:
+          type: string
+          description: Error type
+          example: Bad Request
+        message:
+          type: string
+          description: Error message
+          example: Invalid input data
+        path:
+          type: string
+          description: Request path
+          example: /api/v1/bookings
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -76,6 +77,20 @@ public class GlobalExceptionHandler {
     log.debug(ex.getMessage(), ex);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+      AccessDeniedException ex, WebRequest request) {
+    var errorResponse = new ErrorResponse();
+    errorResponse.setTimestamp(OffsetDateTime.now());
+    errorResponse.setStatus(HttpStatus.FORBIDDEN.value());
+    errorResponse.setError(HttpStatus.FORBIDDEN.getReasonPhrase());
+    errorResponse.setMessage("Access is denied");
+    errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+    log.debug(ex.getMessage(), ex);
+
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
   }
 
   @ExceptionHandler(Exception.class)
