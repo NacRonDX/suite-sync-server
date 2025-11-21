@@ -285,7 +285,6 @@ components:
         - email
         - firstName
         - lastName
-        - userType
         - password
       properties:
         email:
