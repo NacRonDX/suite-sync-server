@@ -49,7 +49,7 @@ public class UserService {
             .lastName(request.getLastName())
             .phoneNumber(request.getPhoneNumber())
             .passwordHash(passwordEncoder.encode(request.getPassword()))
-            .userType(User.UserType.valueOf(request.getUserType().name()))
+            .userType(User.UserType.CUSTOMER)
             .status(User.UserStatus.INACTIVE)
             .confirmationToken(confirmationToken)
             .confirmationTokenExpiry(tokenExpiry)
