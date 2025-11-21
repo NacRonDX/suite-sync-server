@@ -73,8 +73,6 @@ public class AuthService {
 
   public void changePassword(ChangePasswordRequest request) {}
 
-  public void logout() {}
-
   public TokenValidationResponse validateToken(Authentication authentication) {
     if (!(authentication instanceof JwtAuthenticationToken jwtAuth)) {
       throw new BadCredentialsException("Invalid authentication token");

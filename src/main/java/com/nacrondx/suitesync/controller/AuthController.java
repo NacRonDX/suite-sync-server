@@ -36,13 +36,6 @@ public class AuthController implements AuthenticationApi {
 
   @Override
   @PreAuthorize("isAuthenticated()")
-  public ResponseEntity<Void> logout() {
-    authService.logout();
-    return ResponseEntity.noContent().build();
-  }
-
-  @Override
-  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<TokenValidationResponse> validateToken() {
     var authentication = SecurityContextHolder.getContext().getAuthentication();
     return ResponseEntity.ok(authService.validateToken(authentication));
