@@ -1,0 +1,154 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-create-rooms-table
+      author: suite-sync
+      changes:
+        - createTable:
+            tableName: rooms
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: room_number
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: room_type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: max_occupancy
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price_per_night
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: size
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: floor
+                  type: INT
+              - column:
+                  name: description
+                  type: VARCHAR(1000)
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: AVAILABLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_rooms_room_number
+            tableName: rooms
+            columns:
+              - column:
+                  name: room_number
+        - createIndex:
+            indexName: idx_rooms_room_type
+            tableName: rooms
+            columns:
+              - column:
+                  name: room_type
+        - createIndex:
+            indexName: idx_rooms_status
+            tableName: rooms
+            columns:
+              - column:
+                  name: status
+
+  - changeSet:
+      id: 004-create-room-amenities-table
+      author: suite-sync
+      changes:
+        - createTable:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amenity
+                  type: VARCHAR(255)
+        - addForeignKeyConstraint:
+            baseTableName: room_amenities
+            baseColumnNames: room_id
+            constraintName: fk_room_amenities_room
+            referencedTableName: rooms
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createIndex:
+            indexName: idx_room_amenities_room_id
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+
+  - changeSet:
+      id: 004-create-room-images-table
+      author: suite-sync
+      changes:
+        - createTable:
+            tableName: room_images
+            columns:
+              - column:
+                  name: room_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: image_url
+                  type: VARCHAR(500)
+        - addForeignKeyConstraint:
+            baseTableName: room_images
+            baseColumnNames: room_id
+            constraintName: fk_room_images_room
+            referencedTableName: rooms
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createIndex:
+            indexName: idx_room_images_room_id
+            tableName: room_images
+            columns:
+              - column:
+                  name: room_id
+
+  - changeSet:
+      id: 004-add-rooms-table-constraints
+      author: suite-sync
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE rooms ADD CONSTRAINT chk_room_type CHECK (room_type IN ('SINGLE', 'DOUBLE', 'SUITE', 'DELUXE', 'PENTHOUSE'));
+              ALTER TABLE rooms ADD CONSTRAINT chk_room_status CHECK (status IN ('AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'OUT_OF_SERVICE'));
+              ALTER TABLE rooms ADD CONSTRAINT chk_max_occupancy CHECK (max_occupancy > 0);
+              ALTER TABLE rooms ADD CONSTRAINT chk_price_per_night CHECK (price_per_night >= 0);
+              ALTER TABLE rooms ADD CONSTRAINT chk_size CHECK (size > 0);
+

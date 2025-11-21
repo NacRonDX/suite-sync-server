@@ -5,4 +5,8 @@ databaseChangeLog:
       file: db/changelog/changes/002-insert-admin-user.yaml
   - include:
       file: db/changelog/changes/003-add-confirmation-token-fields.yaml
+  - include:
+      file: db/changelog/changes/004-create-rooms-tables.yaml
+  - include:
+      file: db/changelog/changes/005-insert-sample-rooms.yaml
 

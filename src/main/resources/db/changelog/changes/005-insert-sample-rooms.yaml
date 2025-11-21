@@ -1,0 +1,403 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-insert-sample-rooms
+      author: suite-sync
+      changes:
+        - insert:
+            tableName: rooms
+            columns:
+              - column:
+                  name: room_number
+                  value: "101"
+              - column:
+                  name: room_type
+                  value: "SINGLE"
+              - column:
+                  name: max_occupancy
+                  valueNumeric: 1
+              - column:
+                  name: price_per_night
+                  valueNumeric: 99.99
+              - column:
+                  name: size
+                  valueNumeric: 20.0
+              - column:
+                  name: floor
+                  valueNumeric: 1
+              - column:
+                  name: description
+                  value: "Cozy single room with city view"
+              - column:
+                  name: status
+                  value: "AVAILABLE"
+        - insert:
+            tableName: rooms
+            columns:
+              - column:
+                  name: room_number
+                  value: "102"
+              - column:
+                  name: room_type
+                  value: "DOUBLE"
+              - column:
+                  name: max_occupancy
+                  valueNumeric: 2
+              - column:
+                  name: price_per_night
+                  valueNumeric: 149.99
+              - column:
+                  name: size
+                  valueNumeric: 30.0
+              - column:
+                  name: floor
+                  valueNumeric: 1
+              - column:
+                  name: description
+                  value: "Comfortable double room with queen-sized bed"
+              - column:
+                  name: status
+                  value: "AVAILABLE"
+        - insert:
+            tableName: rooms
+            columns:
+              - column:
+                  name: room_number
+                  value: "201"
+              - column:
+                  name: room_type
+                  value: "SUITE"
+              - column:
+                  name: max_occupancy
+                  valueNumeric: 4
+              - column:
+                  name: price_per_night
+                  valueNumeric: 299.99
+              - column:
+                  name: size
+                  valueNumeric: 50.0
+              - column:
+                  name: floor
+                  valueNumeric: 2
+              - column:
+                  name: description
+                  value: "Spacious suite with separate living area and king-sized bed"
+              - column:
+                  name: status
+                  value: "AVAILABLE"
+        - insert:
+            tableName: rooms
+            columns:
+              - column:
+                  name: room_number
+                  value: "301"
+              - column:
+                  name: room_type
+                  value: "DELUXE"
+              - column:
+                  name: max_occupancy
+                  valueNumeric: 3
+              - column:
+                  name: price_per_night
+                  valueNumeric: 249.99
+              - column:
+                  name: size
+                  valueNumeric: 40.0
+              - column:
+                  name: floor
+                  valueNumeric: 3
+              - column:
+                  name: description
+                  value: "Deluxe room with premium amenities and ocean view"
+              - column:
+                  name: status
+                  value: "AVAILABLE"
+        - insert:
+            tableName: rooms
+            columns:
+              - column:
+                  name: room_number
+                  value: "PH01"
+              - column:
+                  name: room_type
+                  value: "PENTHOUSE"
+              - column:
+                  name: max_occupancy
+                  valueNumeric: 6
+              - column:
+                  name: price_per_night
+                  valueNumeric: 599.99
+              - column:
+                  name: size
+                  valueNumeric: 100.0
+              - column:
+                  name: floor
+                  valueNumeric: 10
+              - column:
+                  name: description
+                  value: "Luxurious penthouse with panoramic views, private terrace, and premium furnishings"
+              - column:
+                  name: status
+                  value: "AVAILABLE"
+
+  - changeSet:
+      id: 005-insert-room-amenities
+      author: suite-sync
+      changes:
+        # Amenities for Room 101 (Single)
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 1
+              - column:
+                  name: amenity
+                  value: "WiFi"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 1
+              - column:
+                  name: amenity
+                  value: "TV"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 1
+              - column:
+                  name: amenity
+                  value: "Air Conditioning"
+        # Amenities for Room 102 (Double)
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 2
+              - column:
+                  name: amenity
+                  value: "WiFi"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 2
+              - column:
+                  name: amenity
+                  value: "TV"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 2
+              - column:
+                  name: amenity
+                  value: "Air Conditioning"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 2
+              - column:
+                  name: amenity
+                  value: "Mini Bar"
+        # Amenities for Room 201 (Suite)
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 3
+              - column:
+                  name: amenity
+                  value: "WiFi"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 3
+              - column:
+                  name: amenity
+                  value: "TV"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 3
+              - column:
+                  name: amenity
+                  value: "Air Conditioning"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 3
+              - column:
+                  name: amenity
+                  value: "Mini Bar"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 3
+              - column:
+                  name: amenity
+                  value: "Safe"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 3
+              - column:
+                  name: amenity
+                  value: "Kitchenette"
+        # Amenities for Room 301 (Deluxe)
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 4
+              - column:
+                  name: amenity
+                  value: "WiFi"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 4
+              - column:
+                  name: amenity
+                  value: "Smart TV"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 4
+              - column:
+                  name: amenity
+                  value: "Air Conditioning"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 4
+              - column:
+                  name: amenity
+                  value: "Mini Bar"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 4
+              - column:
+                  name: amenity
+                  value: "Safe"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 4
+              - column:
+                  name: amenity
+                  value: "Balcony"
+        # Amenities for PH01 (Penthouse)
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 5
+              - column:
+                  name: amenity
+                  value: "WiFi"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 5
+              - column:
+                  name: amenity
+                  value: "Smart TV"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 5
+              - column:
+                  name: amenity
+                  value: "Air Conditioning"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 5
+              - column:
+                  name: amenity
+                  value: "Full Bar"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 5
+              - column:
+                  name: amenity
+                  value: "Safe"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 5
+              - column:
+                  name: amenity
+                  value: "Full Kitchen"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 5
+              - column:
+                  name: amenity
+                  value: "Private Terrace"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 5
+              - column:
+                  name: amenity
+                  value: "Jacuzzi"
+        - insert:
+            tableName: room_amenities
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 5
+              - column:
+                  name: amenity
+                  value: "Home Theater"
+
