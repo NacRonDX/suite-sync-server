@@ -1,6 +1,7 @@
 package com.nacrondx.suitesync.service;
 
 import com.nacrondx.suitesync.entity.Room;
+import com.nacrondx.suitesync.exception.ResourceNotFoundException;
 import com.nacrondx.suitesync.model.room.AvailabilityResponse;
 import com.nacrondx.suitesync.model.room.CreateRoomRequest;
 import com.nacrondx.suitesync.model.room.RoomPageResponse;
@@ -77,29 +78,93 @@ public class RoomService {
   @Transactional
   public RoomResponse createRoom(CreateRoomRequest request) {
     log.info("Creating room: {}", request.getRoomNumber());
-    // TODO: Implement room creation logic
-    throw new UnsupportedOperationException("Room creation not yet implemented");
+
+    var room = Room.builder()
+        .roomNumber(request.getRoomNumber())
+        .roomType(Room.RoomType.valueOf(request.getRoomType().name()))
+        .maxOccupancy(request.getMaxOccupancy())
+        .pricePerNight(request.getPricePerNight())
+        .size(request.getSize())
+        .floor(request.getFloor())
+        .description(request.getDescription())
+        .status(Room.RoomStatus.AVAILABLE)
+        .build();
+
+    if (request.getAmenities() != null && !request.getAmenities().isEmpty()) {
+      room.getAmenities().addAll(request.getAmenities());
+    }
+
+    if (request.getImages() != null && !request.getImages().isEmpty()) {
+      room.getImages().addAll(request.getImages().stream().map(URI::toString).toList());
+    }
+
+    var savedRoom = roomRepository.save(room);
+    log.info("Successfully created room: {}", savedRoom.getRoomNumber());
+    return mapToRoomResponse(savedRoom);
   }
 
   @Transactional(readOnly = true)
   public RoomResponse getRoomById(Long roomId) {
     log.info("Fetching room with ID: {}", roomId);
-    // TODO: Implement room retrieval logic
-    throw new UnsupportedOperationException("Room retrieval not yet implemented");
+
+    var room = roomRepository.findById(roomId)
+        .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+
+    log.info("Successfully fetched room: {}", room.getRoomNumber());
+    return mapToRoomResponse(room);
   }
 
   @Transactional
   public RoomResponse updateRoom(Long roomId, UpdateRoomRequest request) {
     log.info("Updating room with ID: {}", roomId);
-    // TODO: Implement room update logic
-    throw new UnsupportedOperationException("Room update not yet implemented");
+
+    var room = roomRepository.findById(roomId)
+        .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+
+    if (request.getRoomType() != null) {
+      room.setRoomType(Room.RoomType.valueOf(request.getRoomType().name()));
+    }
+    if (request.getMaxOccupancy() != null) {
+      room.setMaxOccupancy(request.getMaxOccupancy());
+    }
+    if (request.getPricePerNight() != null) {
+      room.setPricePerNight(request.getPricePerNight());
+    }
+    if (request.getSize() != null) {
+      room.setSize(request.getSize());
+    }
+    if (request.getFloor() != null) {
+      room.setFloor(request.getFloor());
+    }
+    if (request.getDescription() != null) {
+      room.setDescription(request.getDescription());
+    }
+    if (request.getStatus() != null) {
+      room.setStatus(Room.RoomStatus.valueOf(request.getStatus().name()));
+    }
+    if (request.getAmenities() != null) {
+      room.getAmenities().clear();
+      room.getAmenities().addAll(request.getAmenities());
+    }
+    if (request.getImages() != null) {
+      room.getImages().clear();
+      room.getImages().addAll(request.getImages().stream().map(URI::toString).toList());
+    }
+
+    var updatedRoom = roomRepository.save(room);
+    log.info("Successfully updated room: {}", updatedRoom.getRoomNumber());
+    return mapToRoomResponse(updatedRoom);
   }
 
   @Transactional
   public void deleteRoom(Long roomId) {
     log.info("Deleting room with ID: {}", roomId);
-    // TODO: Implement room deletion logic (check for active bookings first)
-    throw new UnsupportedOperationException("Room deletion not yet implemented");
+
+    var room = roomRepository.findById(roomId)
+        .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+
+    roomRepository.delete(room);
+    log.info("Successfully deleted room: {}", room.getRoomNumber());
   }
 
   @Transactional(readOnly = true)

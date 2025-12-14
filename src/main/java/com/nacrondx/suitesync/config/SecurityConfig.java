@@ -34,6 +34,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+  private final JwtAuthenticationConverter jwtAuthenticationConverter;
+
   @Value("${jwt.public-key}")
   private String publicKey;
 
@@ -42,6 +44,10 @@ public class SecurityConfig {
 
   @Value("${app.base-url}")
   private String baseUrl;
+
+  public SecurityConfig(JwtAuthenticationConverter jwtAuthenticationConverter) {
+    this.jwtAuthenticationConverter = jwtAuthenticationConverter;
+  }
 
   private RSAPublicKey getPublicKey() {
     try {
@@ -85,7 +91,12 @@ public class SecurityConfig {
                     .permitAll())
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())));
+        .oauth2ResourceServer(
+            oauth2 ->
+                oauth2.jwt(
+                    jwt ->
+                        jwt.decoder(jwtDecoder())
+                            .jwtAuthenticationConverter(jwtAuthenticationConverter)));
 
     return http.build();
   }
