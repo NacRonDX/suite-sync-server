@@ -9,6 +9,7 @@ import com.nacrondx.suitesync.model.room.RoomResponse;
 import com.nacrondx.suitesync.model.room.RoomStatus;
 import com.nacrondx.suitesync.model.room.RoomType;
 import com.nacrondx.suitesync.model.room.UpdateRoomRequest;
+import com.nacrondx.suitesync.repository.BookingRepository;
 import com.nacrondx.suitesync.repository.RoomRepository;
 import com.nacrondx.suitesync.repository.RoomSpecification;
 import java.net.URI;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class RoomService {
   private final RoomRepository roomRepository;
+  private final BookingRepository bookingRepository;
 
   @Transactional(readOnly = true)
   public RoomPageResponse getAllRooms(
@@ -179,8 +181,42 @@ public class RoomService {
       Long roomId, LocalDate checkInDate, LocalDate checkOutDate) {
     log.info(
         "Checking availability for room ID: {} from {} to {}", roomId, checkInDate, checkOutDate);
-    // TODO: Implement availability check logic
-    throw new UnsupportedOperationException("Room availability check not yet implemented");
+
+    var room =
+        roomRepository
+            .findById(roomId)
+            .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+
+    if (checkOutDate.isBefore(checkInDate) || checkOutDate.isEqual(checkInDate)) {
+      throw new IllegalArgumentException("Check-out date must be after check-in date");
+    }
+
+    long numberOfNights = java.time.temporal.ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+    double totalPrice = numberOfNights * room.getPricePerNight();
+
+    var overlappingBookings =
+        bookingRepository.findOverlappingBookings(roomId, checkInDate, checkOutDate);
+
+    boolean isAvailable =
+        room.getStatus() == Room.RoomStatus.AVAILABLE && overlappingBookings.isEmpty();
+
+    var response = new AvailabilityResponse();
+    response.setAvailable(isAvailable);
+    response.setRoomId(room.getId());
+    response.setCheckInDate(checkInDate);
+    response.setCheckOutDate(checkOutDate);
+    response.setTotalPrice(totalPrice);
+    response.setPricePerNight(room.getPricePerNight());
+    response.setNumberOfNights((int) numberOfNights);
+
+    log.info(
+        "Availability check completed for room {}: available={}, nights={}, totalPrice={}",
+        room.getRoomNumber(),
+        isAvailable,
+        numberOfNights,
+        totalPrice);
+
+    return response;
   }
 
   private RoomResponse mapToRoomResponse(Room room) {

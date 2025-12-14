@@ -28,6 +28,20 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
   }
 
+  @ExceptionHandler(RoomNotAvailableException.class)
+  public ResponseEntity<ErrorResponse> handleRoomNotAvailableException(
+      RoomNotAvailableException ex, WebRequest request) {
+    var errorResponse = new ErrorResponse();
+    errorResponse.setTimestamp(OffsetDateTime.now());
+    errorResponse.setStatus(HttpStatus.CONFLICT.value());
+    errorResponse.setError(HttpStatus.CONFLICT.getReasonPhrase());
+    errorResponse.setMessage(ex.getMessage());
+    errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+    log.debug(ex.getMessage(), ex);
+
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+  }
+
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
       IllegalArgumentException ex, WebRequest request) {
