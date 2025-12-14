@@ -1,0 +1,71 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-insert-sample-reviews
+      author: suite-sync
+      changes:
+        - insert:
+            tableName: reviews
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 1
+              - column:
+                  name: user_id
+                  valueNumeric: 1
+              - column:
+                  name: rating
+                  valueNumeric: 5
+              - column:
+                  name: comment
+                  value: Amazing room with beautiful ocean views. The staff was incredibly helpful and the amenities were top-notch!
+              - column:
+                  name: created_at
+                  valueDate: 2025-12-01T10:00:00
+              - column:
+                  name: updated_at
+                  valueDate: 2025-12-01T10:00:00
+
+        - insert:
+            tableName: reviews
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 1
+              - column:
+                  name: user_id
+                  valueNumeric: 1
+              - column:
+                  name: rating
+                  valueNumeric: 4
+              - column:
+                  name: comment
+                  value: Great room overall, very spacious and clean. Would definitely stay here again!
+              - column:
+                  name: created_at
+                  valueDate: 2025-12-10T15:30:00
+              - column:
+                  name: updated_at
+                  valueDate: 2025-12-10T15:30:00
+
+        - insert:
+            tableName: reviews
+            columns:
+              - column:
+                  name: room_id
+                  valueNumeric: 2
+              - column:
+                  name: user_id
+                  valueNumeric: 1
+              - column:
+                  name: rating
+                  valueNumeric: 5
+              - column:
+                  name: comment
+                  value: Perfect for a romantic getaway! The room was beautifully decorated and the bed was extremely comfortable.
+              - column:
+                  name: created_at
+                  valueDate: 2025-12-05T14:20:00
+              - column:
+                  name: updated_at
+                  valueDate: 2025-12-05T14:20:00
+

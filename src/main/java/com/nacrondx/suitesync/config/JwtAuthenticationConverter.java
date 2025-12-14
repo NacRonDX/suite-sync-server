@@ -12,8 +12,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Component;
 
 @Component
-public class JwtAuthenticationConverter
-    implements Converter<Jwt, AbstractAuthenticationToken> {
+public class JwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
   @Override
   public AbstractAuthenticationToken convert(@NonNull Jwt jwt) {
@@ -29,4 +28,3 @@ public class JwtAuthenticationConverter
     return Collections.emptyList();
   }
 }
-

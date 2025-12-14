@@ -1,0 +1,192 @@
+openapi: 3.0.3
+info:
+  title: Suite Sync Review Management API
+  description: API for managing room reviews in the hotel management system
+  version: 1.0.0
+  contact:
+    name: Suite Sync Team
+    email: support@suitesync.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Reviews
+    description: Review management operations
+
+paths:
+  /api/v1/rooms/{roomId}/reviews:
+    get:
+      tags:
+        - Reviews
+      summary: Get all reviews for a room
+      description: Retrieve a list of reviews for a specific room
+      operationId: getReviewsByRoomId
+      security: []
+      parameters:
+        - name: roomId
+          in: path
+          description: ID of the room to get reviews for
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewResponse'
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Reviews
+      summary: Create a new review
+      description: Create a new review for a specific room (authenticated users only)
+      operationId: createReview
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          description: ID of the room to review
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Review created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CreateReviewRequest:
+      type: object
+      required:
+        - rating
+        - comment
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Rating from 1 to 5 stars
+          example: 5
+        comment:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: Review comment
+          example: Great room with excellent amenities
+
+    ReviewResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier for the review
+          example: 1
+        roomId:
+          type: integer
+          format: int64
+          description: ID of the reviewed room
+          example: 1
+        userId:
+          type: integer
+          format: int64
+          description: ID of the user who wrote the review
+          example: 1
+        userFirstName:
+          type: string
+          description: First name of the reviewer
+          example: John
+        userLastName:
+          type: string
+          description: Last name of the reviewer
+          example: Doe
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Rating from 1 to 5 stars
+          example: 5
+        comment:
+          type: string
+          description: Review comment
+          example: Great room with excellent amenities
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the review was created
+          example: 2023-12-14T10:00:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the review was last updated
+          example: 2023-12-14T10:00:00Z
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the error occurred
+        status:
+          type: integer
+          description: HTTP status code
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Detailed error message
+        path:
+          type: string
+          description: Request path that caused the error
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

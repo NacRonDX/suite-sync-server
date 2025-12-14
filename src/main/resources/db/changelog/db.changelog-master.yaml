@@ -9,4 +9,8 @@ databaseChangeLog:
       file: db/changelog/changes/004-create-rooms-tables.yaml
   - include:
       file: db/changelog/changes/005-insert-sample-rooms.yaml
+  - include:
+      file: db/changelog/changes/006-create-reviews-table.yaml
+  - include:
+      file: db/changelog/changes/007-insert-sample-reviews.yaml
 

@@ -79,16 +79,17 @@ public class RoomService {
   public RoomResponse createRoom(CreateRoomRequest request) {
     log.info("Creating room: {}", request.getRoomNumber());
 
-    var room = Room.builder()
-        .roomNumber(request.getRoomNumber())
-        .roomType(Room.RoomType.valueOf(request.getRoomType().name()))
-        .maxOccupancy(request.getMaxOccupancy())
-        .pricePerNight(request.getPricePerNight())
-        .size(request.getSize())
-        .floor(request.getFloor())
-        .description(request.getDescription())
-        .status(Room.RoomStatus.AVAILABLE)
-        .build();
+    var room =
+        Room.builder()
+            .roomNumber(request.getRoomNumber())
+            .roomType(Room.RoomType.valueOf(request.getRoomType().name()))
+            .maxOccupancy(request.getMaxOccupancy())
+            .pricePerNight(request.getPricePerNight())
+            .size(request.getSize())
+            .floor(request.getFloor())
+            .description(request.getDescription())
+            .status(Room.RoomStatus.AVAILABLE)
+            .build();
 
     if (request.getAmenities() != null && !request.getAmenities().isEmpty()) {
       room.getAmenities().addAll(request.getAmenities());
@@ -107,8 +108,10 @@ public class RoomService {
   public RoomResponse getRoomById(Long roomId) {
     log.info("Fetching room with ID: {}", roomId);
 
-    var room = roomRepository.findById(roomId)
-        .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+    var room =
+        roomRepository
+            .findById(roomId)
+            .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
 
     log.info("Successfully fetched room: {}", room.getRoomNumber());
     return mapToRoomResponse(room);
@@ -118,8 +121,10 @@ public class RoomService {
   public RoomResponse updateRoom(Long roomId, UpdateRoomRequest request) {
     log.info("Updating room with ID: {}", roomId);
 
-    var room = roomRepository.findById(roomId)
-        .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+    var room =
+        roomRepository
+            .findById(roomId)
+            .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
 
     if (request.getRoomType() != null) {
       room.setRoomType(Room.RoomType.valueOf(request.getRoomType().name()));
@@ -160,8 +165,10 @@ public class RoomService {
   public void deleteRoom(Long roomId) {
     log.info("Deleting room with ID: {}", roomId);
 
-    var room = roomRepository.findById(roomId)
-        .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+    var room =
+        roomRepository
+            .findById(roomId)
+            .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
 
     roomRepository.delete(room);
     log.info("Successfully deleted room: {}", room.getRoomNumber());
