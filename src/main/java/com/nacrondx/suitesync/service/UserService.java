@@ -14,6 +14,10 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.InitialDirContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,6 +41,11 @@ public class UserService {
       log.warn("User with email: {} already exists", request.getEmail());
       throw new IllegalArgumentException(
           "User with email " + request.getEmail() + " already exists");
+    }
+
+    if (!isValidEmailDomain(request.getEmail())) {
+      log.warn("Invalid email domain for: {}", request.getEmail());
+      throw new IllegalArgumentException("Email domain has no valid MX records");
     }
 
     var confirmationToken = UUID.randomUUID().toString();
@@ -192,6 +201,19 @@ public class UserService {
     response.setTotalPages(userPage.getTotalPages());
 
     return response;
+  }
+
+  private boolean isValidEmailDomain(String email) {
+    try {
+      var domain = email.substring(email.indexOf('@') + 1);
+      var ctx = new InitialDirContext();
+      var attrs = ctx.getAttributes("dns:/" + domain, new String[] {"MX"});
+      var mxAttr = attrs.get("MX");
+      return mxAttr != null && mxAttr.size() > 0;
+    } catch (NamingException e) {
+      log.warn("Failed to verify MX records for email: {}", email, e);
+      return false;
+    }
   }
 
   private UserResponse mapToUserResponse(User user) {
